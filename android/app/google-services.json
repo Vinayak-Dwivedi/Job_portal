@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "197250239805",
+    "project_id": "ki-job-portal",
+    "storage_bucket": "ki-job-portal.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:197250239805:android:cd8fddcfb664391944c954",
+        "android_client_info": {
+          "package_name": "com.ki.jobportal.ki_job_portal"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDzUSIslG1abco6dPwVbBqG12tSi-jWWWs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
