@@ -1,12 +1,14 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/services/post_service.dart';
 import '../../widgets/feed/post_pending_banner.dart';
 import '../../providers/worker_provider.dart';
 import '../../providers/employer_provider.dart';
-
+import '../../providers/auth_provider.dart';
+import '../../core/theme/app_colors.dart';
 
 class CreatePostScreen extends ConsumerStatefulWidget {
   const CreatePostScreen({super.key});
@@ -16,32 +18,28 @@ class CreatePostScreen extends ConsumerStatefulWidget {
 }
 
 class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
-  final TextEditingController _titleController = TextEditingController();
   final TextEditingController _descController = TextEditingController();
   final ImagePicker _picker = ImagePicker();
   final List<File> _selectedImages = [];
   bool _isLoading = false;
 
   Future<void> _pickImages() async {
-    if (_selectedImages.length >= 4) {
+    if (_selectedImages.length >= 1) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Maximum 4 images allowed')),
+        const SnackBar(content: Text('Unified schema supports 1 image per post')),
       );
       return;
     }
 
     try {
-      final List<XFile> images = await _picker.pickMultiImage(
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.gallery,
         imageQuality: 80,
       );
       
-      if (images.isNotEmpty) {
+      if (image != null) {
         setState(() {
-          for (var img in images) {
-            if (_selectedImages.length < 4) {
-              _selectedImages.add(File(img.path));
-            }
-          }
+          _selectedImages.add(File(image.path));
         });
       }
     } catch (e) {
@@ -52,9 +50,9 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
   }
 
   Future<void> _pickCamera() async {
-    if (_selectedImages.length >= 4) {
+    if (_selectedImages.length >= 1) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Maximum 4 images allowed')),
+        const SnackBar(content: Text('Unified schema supports 1 image per post')),
       );
       return;
     }
@@ -74,12 +72,11 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
   }
 
   Future<void> _submitPost() async {
-    final title = _titleController.text.trim();
     final desc = _descController.text.trim();
 
     if (desc.isEmpty && _selectedImages.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please add some text or images to post!')),
+        const SnackBar(content: Text('Please add some text or an image to post!')),
       );
       return;
     }
@@ -87,39 +84,41 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // NOTE: For Employer role we would use their provider, assuming Worker for now or extracting from auth.
-      final worker = ref.read(workerProvider);
-final employer = ref.read(employerProvider);
+      final auth = ref.read(authProvider);
+      if (auth == null) throw Exception("User not logged in");
 
-final isWorker = worker != null;
+      final isWorker = auth.role == 'worker';
+      
+      String name = 'Unknown User';
+      String? photoUrl;
+      bool isVerified = false;
 
-final userName = isWorker
-    ? worker.name
-    : employer!.name;
-
-final isVerified = isWorker
-    ? worker.isVerified
-    : employer!.isVerified;
-
-final photoUrl = isWorker
-    ? worker.profilePhotoUrl
-    : employer!.profilePhotoUrl;
-
-final role = isWorker ? 'worker' : 'employer';
+      if (isWorker) {
+        final worker = ref.read(workerProvider);
+        name = worker?.name ?? 'Worker';
+        photoUrl = worker?.profilePhotoUrl;
+        isVerified = worker?.isVerified ?? false;
+      } else {
+        final employer = ref.read(employerProvider);
+        name = employer?.name ?? 'Employer';
+        photoUrl = employer?.profilePhotoUrl;
+        isVerified = employer?.isVerified ?? false;
+      }
 
       await PostService.createPost(
-          userRole: role, // dynamic based on user context
-        userName: userName,
-        userPhotoUrl: photoUrl,
-        isUserVerified: isVerified,
-        title: title,
-        description: desc,
+        uid: auth.uid,
+        name: name,
+        role: auth.role,
+        text: desc,
         imageFiles: _selectedImages,
+        profilePhotoUrl: photoUrl,
+        isVerified: isVerified,
+        location: 'Current Location', // Placeholder or fetch actual location
       );
 
       if (mounted) {
-        Navigator.pop(context);
-        showPostPendingBanner(context);
+        context.pop();
+        // showPostPendingBanner(context); // Optional: if we want a banner
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -132,134 +131,182 @@ final role = isWorker ? 'worker' : 'employer';
 
   @override
   void dispose() {
-    _titleController.dispose();
     _descController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final auth = ref.watch(authProvider);
+    final isWorker = auth?.role == 'worker';
+    
+    String name = 'User';
+    String? photoUrl;
+    if (isWorker) {
+      name = ref.watch(workerProvider)?.name ?? 'Worker';
+      photoUrl = ref.watch(workerProvider)?.profilePhotoUrl;
+    } else {
+      name = ref.watch(employerProvider)?.name ?? 'Employer';
+      photoUrl = ref.watch(employerProvider)?.profilePhotoUrl;
+    }
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.darkSurface,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.darkSurface,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black),
-        title: const Text('New Post', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+        leading: IconButton(
+          icon: const Icon(Icons.close, color: Colors.white),
+          onPressed: () => context.pop(),
+        ),
+        title: const Text('New Post', 
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 20)),
         actions: [
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
             child: ElevatedButton(
               onPressed: _isLoading ? null : _submitPost,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF1D4ED8),
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                elevation: 0,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                padding: const EdgeInsets.symmetric(horizontal: 20),
               ),
               child: _isLoading 
-                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                : const Text('Post', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                : const Text('Post', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14)),
             ),
           )
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            TextField(
-              controller: _titleController,
-              decoration: const InputDecoration(
-                hintText: 'Title (optional)',
-                border: InputBorder.none,
-                hintStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-              ),
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-            ),
-            const Divider(),
-            TextField(
-              controller: _descController,
-              maxLines: null,
-              minLines: 5,
-              decoration: const InputDecoration(
-                hintText: 'What do you want to share with the community?',
-                border: InputBorder.none,
-              ),
-            ),
-            const SizedBox(height: 16),
-            if (_selectedImages.isNotEmpty)
-              SizedBox(
-                height: 120,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: _selectedImages.length,
-                  itemBuilder: (context, index) {
-                    return Stack(
-                      children: [
-                        Container(
-                          margin: const EdgeInsets.only(right: 8),
-                          width: 120,
-                          height: 120,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(12),
-                            image: DecorationImage(
-                              image: FileImage(_selectedImages[index]),
-                              fit: BoxFit.cover,
+      body: Column(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 20,
+                        backgroundColor: AppColors.darkSurfaceContainerHighest,
+                        backgroundImage: (photoUrl != null && photoUrl.isNotEmpty)
+                          ? NetworkImage(photoUrl)
+                          : null,
+                        child: (photoUrl == null || photoUrl.isEmpty)
+                          ? const Icon(Icons.person, color: Colors.white70)
+                          : null,
+                      ),
+                      const SizedBox(width: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            name,
+                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+                          ),
+                          Container(
+                            margin: const EdgeInsets.only(top: 2),
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: AppColors.darkSurfaceContainerHighest,
+                              borderRadius: BorderRadius.circular(4),
                             ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.public, size: 12, color: AppColors.darkOnSurfaceVariant),
+                                const SizedBox(width: 4),
+                                const Text('Public', style: TextStyle(color: AppColors.darkOnSurfaceVariant, fontSize: 10, fontWeight: FontWeight.bold)),
+                                const Icon(Icons.arrow_drop_down, size: 14, color: AppColors.darkOnSurfaceVariant),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  TextField(
+                    controller: _descController,
+                    maxLines: null,
+                    minLines: 5,
+                    autofocus: true,
+                    style: const TextStyle(color: Colors.white, fontSize: 18, height: 1.5),
+                    decoration: const InputDecoration(
+                      hintText: 'What do you want to talk about?',
+                      hintStyle: TextStyle(color: AppColors.darkOnSurfaceVariant, fontSize: 18),
+                      border: InputBorder.none,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  if (_selectedImages.isNotEmpty)
+                    Stack(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: Container(
+                            width: double.infinity,
+                            constraints: const BoxConstraints(maxHeight: 300),
+                            child: Image.file(_selectedImages.first, fit: BoxFit.cover),
                           ),
                         ),
                         Positioned(
-                          top: 4,
-                          right: 12,
+                          top: 10,
+                          right: 10,
                           child: GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _selectedImages.removeAt(index);
-                              });
-                            },
+                            onTap: () => setState(() => _selectedImages.clear()),
                             child: Container(
-                              padding: const EdgeInsets.all(2),
-                              decoration: const BoxDecoration(
-                                color: Colors.black54,
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(Icons.close, color: Colors.white, size: 16),
+                              padding: const EdgeInsets.all(6),
+                              decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
+                              child: const Icon(Icons.close, color: Colors.white, size: 20),
                             ),
                           ),
                         ),
                       ],
-                    );
-                  },
-                ),
+                    ),
+                ],
               ),
-          ],
-        ),
-      ),
-      bottomNavigationBar: SafeArea(
-        child: Container(
-          decoration: const BoxDecoration(
-            border: Border(top: BorderSide(color: Color(0xFFE2E8F0))),
+            ),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          child: Row(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.image, color: Color(0xFF1D4ED8)),
-                onPressed: _pickImages,
-              ),
-              IconButton(
-                icon: const Icon(Icons.camera_alt, color: Color(0xFF1D4ED8)),
-                onPressed: _pickCamera,
-              ),
-              const Spacer(),
-              Text(
-                '${_selectedImages.length}/4',
-                style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(width: 16),
-            ],
+          
+          /// ── Bottom Toolbar ────────────────────────────
+          Container(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).padding.bottom + 8,
+              left: 16,
+              right: 16,
+              top: 8,
+            ),
+            decoration: const BoxDecoration(
+              color: AppColors.darkSurfaceContainer,
+              border: Border(top: BorderSide(color: AppColors.darkSurfaceContainerHighest, width: 0.5)),
+            ),
+            child: Row(
+              children: [
+                _buildToolbarItem(Icons.image_outlined, 'Photo', _pickImages),
+                _buildToolbarItem(Icons.camera_alt_outlined, 'Video', _pickCamera),
+                _buildToolbarItem(Icons.event_outlined, 'Event', () {}),
+                _buildToolbarItem(Icons.more_horiz, '', () {}),
+                const Spacer(),
+                const Icon(Icons.mode_comment_outlined, color: AppColors.darkOnSurfaceVariant),
+                const SizedBox(width: 4),
+                const Text('Anyone', style: TextStyle(color: AppColors.darkOnSurfaceVariant, fontSize: 12, fontWeight: FontWeight.bold)),
+              ],
+            ),
           ),
-        ),
+        ],
       ),
+    );
+  }
+
+  Widget _buildToolbarItem(IconData icon, String label, VoidCallback onTap) {
+    return IconButton(
+      icon: Icon(icon, color: AppColors.darkOnSurfaceVariant, size: 24),
+      onPressed: onTap,
+      tooltip: label,
     );
   }
 }
