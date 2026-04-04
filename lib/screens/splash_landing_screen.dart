@@ -9,6 +9,7 @@ class SplashLandingScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+   
 
     return Scaffold(
       body: Container(
@@ -128,3 +129,4 @@ class SplashLandingScreen extends StatelessWidget {
     );
   }
 }
+

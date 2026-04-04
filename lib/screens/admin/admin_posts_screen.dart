@@ -46,14 +46,14 @@ class AdminPostsScreen extends ConsumerWidget {
                         children: [
                           TextButton.icon(
                             onPressed: () {
-                              AdminService.updatePostStatus(post.postId, 'rejected');
+                              AdminService.updatePostStatus(post['id'], 'rejected');
                             },
                             icon: const Icon(Icons.close, color: Colors.red),
                             label: const Text('Reject', style: TextStyle(color: Colors.red)),
                           ),
                           ElevatedButton.icon(
                             onPressed: () {
-                              AdminService.updatePostStatus(post.postId, 'approved');
+                              AdminService.updatePostStatus(post['id'], 'approved');
                             },
                             icon: const Icon(Icons.check, color: Colors.white, size: 18),
                             label: const Text('Approve', style: TextStyle(color: Colors.white)),

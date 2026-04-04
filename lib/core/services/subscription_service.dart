@@ -1,66 +1,15 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import 'package:razorpay_flutter/razorpay_flutter.dart';
+
 import '../../models/subscription_model.dart';
 
 class SubscriptionService {
   static final _firestore = FirebaseFirestore.instance;
-  late Razorpay _razorpay;
 
-  SubscriptionService() {
-    _razorpay = Razorpay();
-    _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, _handlePaymentSuccess);
-    _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, _handlePaymentError);
-    _razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWallet);
-  }
 
-  // Define on success/error callbacks to be provided by UI
-  Function(PaymentSuccessResponse)? onSuccess;
-  Function(PaymentFailureResponse)? onError;
 
-  void _handlePaymentSuccess(PaymentSuccessResponse response) {
-    if (onSuccess != null) onSuccess!(response);
-  }
 
-  void _handlePaymentError(PaymentFailureResponse response) {
-    if (onError != null) onError!(response);
-  }
 
-  void _handleExternalWallet(ExternalWalletResponse response) {
-    // Handle external wallet if needed
-  }
-
-  void openCheckout({
-    required int amountInPaise,
-    required String name,
-    required String description,
-    required String contact,
-    required String email,
-  }) {
-    var options = {
-      'key': 'rzp_test_YourMockKeyHere', // Replace with real key
-      'amount': amountInPaise,
-      'name': 'KI Job Portal',
-      'description': description,
-      'prefill': {
-        'contact': contact,
-        'email': email,
-      },
-      'external': {
-        'wallets': ['paytm']
-      }
-    };
-
-    try {
-      _razorpay.open(options);
-    } catch (e) {
-      // Handle Error
-    }
-  }
-
-  void dispose() {
-    _razorpay.clear(); // Removes all listeners
-  }
 
   static Future<SubscriptionModel?> getSubscription(String uid) async {
     final doc = await _firestore.collection('subscriptions').doc(uid).get();

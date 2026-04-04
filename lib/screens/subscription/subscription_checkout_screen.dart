@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:razorpay_flutter/razorpay_flutter.dart';
+
 import '../../core/services/subscription_service.dart';
-import '../../providers/worker_provider.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class SubscriptionCheckoutScreen extends ConsumerStatefulWidget {
@@ -21,65 +21,40 @@ class SubscriptionCheckoutScreen extends ConsumerStatefulWidget {
 }
 
 class _SubscriptionCheckoutScreenState extends ConsumerState<SubscriptionCheckoutScreen> {
-  late SubscriptionService _subService;
   bool _isProcessing = false;
 
   @override
   void initState() {
     super.initState();
-    _subService = SubscriptionService();
-    _subService.onSuccess = _handlePaymentSuccess;
-    _subService.onError = _handlePaymentError;
+    // No Razorpay service needed
   }
 
-  void _handlePaymentSuccess(PaymentSuccessResponse response) async {
+  Future<void> _processSubscription() async {
     setState(() => _isProcessing = true);
     try {
       final uid = FirebaseAuth.instance.currentUser!.uid;
       final days = widget.tier == 'pro' ? 30 : 90;
       final maxApp = widget.tier == 'pro' ? 10 : 999;
-      
       await SubscriptionService.updateSubscription(uid, widget.tier, days, maxApp);
-      
       if (mounted) {
         context.go('/subscription-success');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Verification Failed: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Subscription update failed: $e')));
       }
     } finally {
       if (mounted) setState(() => _isProcessing = false);
     }
   }
 
-  void _handlePaymentError(PaymentFailureResponse response) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Payment Failed: ${response.message ?? "Unknown error"}'),
-        backgroundColor: Colors.red,
-      ),
-    );
-    setState(() => _isProcessing = false);
-  }
-
   void _startPayment() {
-    setState(() => _isProcessing = true);
-    final worker = ref.read(workerProvider);
-    final amount = int.parse(widget.priceStr.replaceAll(RegExp(r'[^0-9]'), '')) * 100; // in paise
-    
-    _subService.openCheckout(
-      amountInPaise: amount,
-      name: worker?.name ?? 'User',
-      description: 'Upgrade to ${widget.tier.toUpperCase()} Plan',
-      contact: worker?.phone ?? '9999999999',
-      email: worker?.email ?? 'user@example.com',
-    );
+    // Directly process subscription without payment gateway
+    _processSubscription();
   }
 
   @override
   void dispose() {
-    _subService.dispose();
     super.dispose();
   }
 
@@ -146,15 +121,7 @@ class _SubscriptionCheckoutScreenState extends ConsumerState<SubscriptionCheckou
               ),
             ),
             const SizedBox(height: 12),
-            const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.lock, size: 14, color: Color(0xFF64748B)),
-                SizedBox(width: 6),
-                Text('Secured by Razorpay', style: TextStyle(color: Color(0xFF64748B), fontSize: 13)),
-              ],
-            )
-          ],
+        ],
         ),
       ),
     );

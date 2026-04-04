@@ -1,37 +1,51 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/post_model.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-// Global approved feed
-final feedProvider = StreamProvider<List<PostModel>>((ref) {
+final feedProvider = StreamProvider((ref) {
   return FirebaseFirestore.instance
       .collection('posts')
-      .where('status', isEqualTo: 'approved')
-      .orderBy('createdAt', descending: true)
-      .limit(20)
-      .snapshots()
-      .map((snap) => snap.docs.map((d) => PostModel.fromMap(d.data())).toList());
-});
-
-// My posts (all statuses)
-final myPostsProvider = StreamProvider<List<PostModel>>((ref) {
-  final uid = FirebaseAuth.instance.currentUser?.uid;
-  if (uid == null) return Stream.value([]);
-  return FirebaseFirestore.instance
-      .collection('posts')
-      .where('userId', isEqualTo: uid)
       .orderBy('createdAt', descending: true)
       .snapshots()
-      .map((snap) => snap.docs.map((d) => PostModel.fromMap(d.data())).toList());
+      .map((snapshot) => snapshot.docs.map((doc) {
+            final data = doc.data();
+
+            return {
+              'id': doc.id,
+              'userName': data['userName'] ?? '',
+              'description': data['description'] ?? '',
+              'imageUrls': data['imageUrls'] ?? [],
+              'location': data['location'] ?? '',
+              'userRole': data['userRole'] ?? '',
+              'userPhotoUrl': data['userPhotoUrl'] ?? '',
+              'isUserVerified': data['isUserVerified'] ?? false,
+              'title': data['title'] ?? '',
+              'likes': data['likes'] ?? 0,
+              'comments': data['comments'] ?? 0,
+            };
+          }).toList());
 });
 
-// Admin: pending posts
-final pendingPostsProvider = StreamProvider<List<PostModel>>((ref) {
+final pendingPostsProvider = StreamProvider((ref) {
   return FirebaseFirestore.instance
       .collection('posts')
       .where('status', isEqualTo: 'pending')
-      .orderBy('createdAt', descending: false)   // oldest first for admin
+      .orderBy('createdAt', descending: false)
       .snapshots()
-      .map((snap) => snap.docs.map((d) => PostModel.fromMap(d.data())).toList());
+      .map((snapshot) => snapshot.docs.map((doc) {
+            final data = doc.data();
+
+            return {
+              'id': doc.id,
+              'userName': data['userName'] ?? '',
+              'description': data['description'] ?? '',
+              'imageUrls': data['imageUrls'] ?? [],
+              'location': data['location'] ?? '',
+              'userRole': data['userRole'] ?? '',
+              'userPhotoUrl': data['userPhotoUrl'] ?? '',
+              'isUserVerified': data['isUserVerified'] ?? false,
+              'title': data['title'] ?? '',
+              'likes': data['likes'] ?? 0,
+              'comments': data['comments'] ?? 0,
+            };
+          }).toList());
 });

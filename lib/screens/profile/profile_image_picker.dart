@@ -128,7 +128,7 @@ class _ProfileImagePickerState extends State<ProfileImagePicker> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: _showBottomSheet,
+      onTap: () => _showBottomSheet(context),
       child: Stack(
         alignment: Alignment.center,
         children: [

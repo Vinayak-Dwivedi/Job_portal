@@ -1,69 +1,70 @@
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import '../../models/post_model.dart';
-import 'storage_service.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/foundation.dart';
 
 class PostService {
   static final _firestore = FirebaseFirestore.instance;
+  static final _storage = FirebaseStorage.instance;
 
+  // 🔥 Upload Image
+  static Future<String> uploadImage(File file) async {
+    final ref = _storage
+        .ref()
+        .child('posts/${DateTime.now().millisecondsSinceEpoch}.jpg');
+
+    await ref.putFile(file);
+    return await ref.getDownloadURL();
+  }
+
+  // 🔥 Create Post
   static Future<void> createPost({
     required String userRole,
     required String userName,
     String? userPhotoUrl,
     required bool isUserVerified,
-    required String title,
+    String? title,
     required String description,
-    required List<File> imageFiles,
+    List<File>? imageFiles,
+    String? location,
   }) async {
-    final uid = FirebaseAuth.instance.currentUser!.uid;
-    final postId = _firestore.collection('posts').doc().id;
+    List<String> imageUrls = [];
 
-    // 1. Upload images to Storage (parallel)
-    final imageUrls = await Future.wait(
-      imageFiles.asMap().entries.map((e) =>
-        StorageService.uploadPostImage(uid, postId, e.key, e.value)
-      ),
-    );
+    if (imageFiles != null && imageFiles.isNotEmpty) {
+      for (var file in imageFiles) {
+        String url = await uploadImage(file);
+        imageUrls.add(url);
+      }
+    }
 
-    // 2. Write post document (status = "pending")
-    // NOTE: Rule: Posts default to `status: "pending"`
-    await _firestore.collection('posts').doc(postId).set({
-      'postId': postId,
-      'userId': uid,
+    await _firestore.collection('posts').add({
       'userRole': userRole,
       'userName': userName,
-      'userPhotoUrl': userPhotoUrl,
+      'userPhotoUrl': userPhotoUrl ?? "",
       'isUserVerified': isUserVerified,
-      'title': title.trim(),
-      'description': description.trim(),
+      'title': title ?? "",
+      'description': description,
       'imageUrls': imageUrls,
-      'status': 'pending', 
+      'location': location ?? "",
+      'likes': 0,
+      'comments': 0,
+      'status': 'approved', // Auto-approve for now or set to pending
       'createdAt': FieldValue.serverTimestamp(),
-      'likeCount': 0,
-    });
-
-    // 3. Add postId to user's postIds array
-    await _firestore.collection('users').doc(uid).update({
-      'postIds': FieldValue.arrayUnion([postId]),
     });
   }
 
-  static Future<void> deletePost(String postId) async {
-    final uid = FirebaseAuth.instance.currentUser!.uid;
-    final batch = _firestore.batch();
-    
-    batch.delete(_firestore.collection('posts').doc(postId));
-    batch.update(_firestore.collection('users').doc(uid), {
-      'postIds': FieldValue.arrayRemove([postId])
-    });
-
-    await batch.commit();
-  }
-
-  static Future<PostModel?> getPost(String postId) async {
-    final doc = await _firestore.collection('posts').doc(postId).get();
-    if (!doc.exists || doc.data() == null) return null;
-    return PostModel.fromMap(doc.data()!);
+  // 🔥 Get Single Post
+  static Future<Map<String, dynamic>?> getPost(String postId) async {
+    try {
+      final doc = await _firestore.collection('posts').doc(postId).get();
+      if (!doc.exists) return null;
+      
+      final data = doc.data()!;
+      data['id'] = doc.id;
+      return data;
+    } catch (e) {
+      debugPrint("Error fetching post: $e");
+      return null;
+    }
   }
 }

@@ -1,714 +1,314 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/theme/app_colors.dart';
 import '../../providers/worker_provider.dart';
-import '../profile/profile_image_picker.dart';
-import '../../providers/post_provider.dart';
-import '../../widgets/feed/post_card.dart';
 
-class WorkerProfileScreen extends ConsumerStatefulWidget {
+class WorkerProfileScreen extends ConsumerWidget {
   const WorkerProfileScreen({super.key});
 
   @override
-  ConsumerState<WorkerProfileScreen> createState() => _WorkerProfileScreenState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final worker = ref.watch(workerProvider);
+    final name = worker?.name ?? 'Suresh Kumar';
+    final skills = worker?.skills ?? ['UI/UX Design', 'Product Strategy'];
+    final phone = worker?.phone ?? '';
 
-class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-
-  // Project images (local mock URLs)
-  final List<String> _projectImages = [
-    'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=400&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?w=400&auto=format&fit=crop',
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 4, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF1D4ED8),
-      body: Column(
-        children: [
-          // ── Blue header ──────────────────────────────────────────────
-          SafeArea(
-            bottom: false,
-            child: Column(
-              children: [
-                // Top bar
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  child: Row(
+      backgroundColor: AppColors.darkSurface,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => context.pop(),
+        ),
+        title: const Text(
+          'Professional Profile',
+          style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.more_vert, color: Colors.white),
+            onPressed: () {},
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        child: Column(
+          children: [
+            // Top Section
+            Container(
+              decoration: BoxDecoration(
+                color: AppColors.darkSurfaceContainerHighest,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                children: [
+                   Stack(
+                    alignment: Alignment.bottomRight,
                     children: [
-                      IconButton(
-                        icon: const Icon(Icons.arrow_back, color: Colors.white),
-                        onPressed: () => context.pop(),
+                      CircleAvatar(
+                        radius: 44,
+                        backgroundColor: AppColors.darkSurfaceContainerHighest,
+                        backgroundImage: worker?.profilePhotoUrl != null 
+                            ? NetworkImage(worker!.profilePhotoUrl!)
+                            : const NetworkImage('https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400'),
                       ),
-                      const Expanded(
-                        child: Text(
-                          'The Digital Atelier',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
+                      Container(
+                        padding: const EdgeInsets.all(2),
+                        decoration: const BoxDecoration(
+                          color: AppColors.secondary,
+                          shape: BoxShape.circle,
                         ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.more_vert, color: Colors.white),
-                        onPressed: () {},
+                        child: const Icon(Icons.check, color: Colors.white, size: 14),
                       ),
                     ],
                   ),
-                ),
-
-                const SizedBox(height: 8),
-
-                // Avatar with verified badge
-                Stack(
-                  clipBehavior: Clip.none,
-                  alignment: Alignment.bottomCenter,
-                  children: [
-                    ProfileImagePicker(
-                      role: 'worker',
-                      currentImageUrl: ref.watch(workerProvider)?.profilePhotoUrl,
-                      onUploaded: (url) {
-                        final current = ref.read(workerProvider);
-                        if (current != null) {
-                          ref.read(workerProvider.notifier).updateWorker(
-                              current.copyWith(profilePhotoUrl: url, localImageFile: null));
-                        }
-                      },
-                    ),
-                    // Verified badge
-                    Positioned(
-                      bottom: -12,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        name,
+                        style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF6EE7B7),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: Colors.white, width: 2),
+                          color: const Color(0xFFD1FAE5),
+                          borderRadius: BorderRadius.circular(4),
                         ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.verified, color: Color(0xFF047857), size: 11),
-                            SizedBox(width: 3),
-                            Text(
-                              'Verified\nWorker',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: Color(0xFF047857),
-                                fontSize: 8,
-                                fontWeight: FontWeight.bold,
-                                height: 1.1,
-                              ),
-                            ),
-                          ],
+                        child: const Text('VERIFIED', style: TextStyle(color: Color(0xFF047857), fontSize: 8, fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.star, color: Color(0xFFFBBF24), size: 14),
+                      SizedBox(width: 4),
+                      Text('4.8', style: TextStyle(color: Color(0xFFFBBF24), fontWeight: FontWeight.bold, fontSize: 13)),
+                      Text('  •  124 Reviews', style: TextStyle(color: AppColors.darkOnSurfaceVariant, fontSize: 13)),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {},
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                          child: const Text('Hire Now', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 28),
-
-                // Name
-                Text(
-                  ref.watch(workerProvider)?.name ?? 'Worker',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.2,
-                  ),
-                ),
-                const SizedBox(height: 10),
-
-                // Skill chips
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _headerChip(ref.watch(workerProvider)?.skills.firstOrNull ?? 'Skilled Worker'),
-                    const SizedBox(width: 8),
-                    _headerChip('Plumber'),
-                  ],
-                ),
-                const SizedBox(height: 12),
-
-                // Rating row
-                const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.star, color: Color(0xFFFBBF24), size: 16),
-                    SizedBox(width: 4),
-                    Text('4.8', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                    SizedBox(width: 4),
-                    Text('(23 reviews)', style: TextStyle(color: Colors.white70, fontSize: 12)),
-                  ],
-                ),
-                const SizedBox(height: 20),
-              ],
-            ),
-          ),
-
-          // ── White body ───────────────────────────────────────────────
-          Expanded(
-            child: Container(
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(28),
-                  topRight: Radius.circular(28),
-                ),
-              ),
-              child: ClipRRect(
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(28),
-                  topRight: Radius.circular(28),
-                ),
-                child: Column(
-                  children: [
-                    // Action buttons
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: ElevatedButton.icon(
-                              onPressed: () => _showEditProfileSheet(context),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF1D4ED8),
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 13),
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12)),
-                                elevation: 0,
-                              ),
-                              icon: const Icon(Icons.edit, size: 16),
-                              label: const Text('Contact',
-                                  style: TextStyle(fontWeight: FontWeight.bold)),
-                            ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () {
+                            context.push('/worker/profile/edit');
+                          },
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: AppColors.outline),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: () => _showEditProfileSheet(context),
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: const Color(0xFF047857),
-                                side: const BorderSide(color: Color(0xFF047857)),
-                                padding: const EdgeInsets.symmetric(vertical: 13),
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12)),
-                              ),
-                              icon: const Icon(Icons.handshake_outlined, size: 16),
-                              label: const Text('Hire',
-                                  style: TextStyle(fontWeight: FontWeight.bold)),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Container(
-                            padding: const EdgeInsets.all(13),
-                            decoration: BoxDecoration(
-                              border: Border.all(color: const Color(0xFFE2E8F0)),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Icon(Icons.bookmark_border,
-                                color: Color(0xFF475569), size: 20),
-                          ),
-                        ],
+                          child: const Text('Edit Profile', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                        ),
                       ),
-                    ),
-
-                    // Tabs
-                    TabBar(
-                      controller: _tabController,
-                      labelColor: const Color(0xFF1D4ED8),
-                      unselectedLabelColor: const Color(0xFF64748B),
-                      labelStyle: const TextStyle(fontWeight: FontWeight.bold),
-                      indicatorColor: const Color(0xFF1D4ED8),
-                      indicatorWeight: 2.5,
-                      dividerColor: const Color(0xFFE2E8F0),
-                      tabs: const [
-                        Tab(text: 'About'),
-                        Tab(text: 'My Posts'),
-                        Tab(text: 'Portfolio'),
-                        Tab(text: 'Reviews'),
-                      ],
-                    ),
-
-                    // Tab content
-                    Expanded(
-                      child: TabBarView(
-                        controller: _tabController,
-                        children: [
-                          _buildAboutTab(),
-                          _buildMyPostsTab(),
-                          _buildPortfolioTab(),
-                          _buildReviewsTab(),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-
-      // Bottom nav
-      bottomNavigationBar: _buildBottomNav(),
-    );
-  }
-
-  // ── About tab ──────────────────────────────────────────────────────
-  Widget _buildAboutTab() {
-    final skills = (ref.watch(workerProvider)?.skills ?? []).isNotEmpty
-        ? (ref.watch(workerProvider)?.skills ?? [])
-        : ['Wiring', 'Repair', 'Installation', 'Maintenance'];
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _sectionTitle('Expertise & Skills'),
-          const SizedBox(height: 12),
-
-          // skill pills
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: skills.map((s) => _skillPill(s)).toList()
-              ..add(_skillPill((ref.watch(workerProvider)?.skills.firstOrNull ?? ''))),
-          ),
-          const SizedBox(height: 20),
-
-          // Info tiles
-          _infoTile(
-            icon: Icons.work_outline,
-            title: 'Experience',
-            subtitle: '${ref.watch(workerProvider)?.skills.length ?? 0}+ years experience',
-            iconBg: const Color(0xFFDBEAFE),
-            iconColor: const Color(0xFF1D4ED8),
-          ),
-          const SizedBox(height: 10),
-          _infoTile(
-            icon: Icons.location_on_outlined,
-            title: 'Location',
-            subtitle: 'Mumbai, Maharashtra',
-            iconBg: const Color(0xFFEFF6FF),
-            iconColor: const Color(0xFF1D4ED8),
-          ),
-          const SizedBox(height: 10),
-          _infoTile(
-            icon: Icons.circle,
-            title: 'Status',
-            subtitle: 'Available Now',
-            iconBg: const Color(0xFFD1FAE5),
-            iconColor: const Color(0xFF059669),
-            subtitleColor: const Color(0xFF059669),
-          ),
-          const SizedBox(height: 24),
-
-          // Recent Projects header
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _sectionTitle('Recent Projects'),
-              const Text(
-                'See All',
-                style: TextStyle(
-                    color: Color(0xFF1D4ED8),
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          // Project images
-          Row(
-            children: [
-              Expanded(child: _projectImg(_projectImages[0])),
-              const SizedBox(width: 12),
-              Expanded(child: _projectImg(_projectImages[1])),
-            ],
-          ),
-          const SizedBox(height: 20),
-
-          // Availability banner
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            decoration: BoxDecoration(
-              color: const Color(0xFF047857),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 10,
-                  height: 10,
-                  decoration: const BoxDecoration(
-                      color: Colors.white, shape: BoxShape.circle),
-                ),
-                const SizedBox(width: 12),
-                const Expanded(
-                  child: Text(
-                    'Available for work • Mumbai, Pune',
-                    style: TextStyle(
-                        color: Colors.white, fontWeight: FontWeight.bold),
+                    ],
                   ),
-                ),
-                const Icon(Icons.arrow_forward_ios,
-                    color: Colors.white, size: 14),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMyPostsTab() {
-    final postsAsync = ref.watch(myPostsProvider);
-
-    return postsAsync.when(
-      data: (posts) {
-        if (posts.isEmpty) {
-          return const Center(
-            child: Text('No posts yet.', style: TextStyle(color: Color(0xFF94A3B8))),
-          );
-        }
-        return ListView.builder(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          itemCount: posts.length,
-          itemBuilder: (context, index) {
-            final post = posts[index];
-            return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: PostCard(post: post),
-            );
-          },
-        );
-      },
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, st) => Center(child: Text('Error: $e')),
-    );
-  }
-
-  Widget _buildPortfolioTab() {
-    return const Center(
-      child: Text('Portfolio coming soon',
-          style: TextStyle(color: Color(0xFF94A3B8))),
-    );
-  }
-
-  Widget _buildReviewsTab() {
-    return const Center(
-      child: Text('Reviews coming soon',
-          style: TextStyle(color: Color(0xFF94A3B8))),
-    );
-  }
-
-  // ── Helpers ─────────────────────────────────────────────────────────
-  Widget _headerChip(String label) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.white54),
-        ),
-        child: Text(label,
-            style: const TextStyle(color: Colors.white, fontSize: 12)),
-      );
-
-  Widget _sectionTitle(String title) => Row(
-        children: [
-          Container(
-              width: 3,
-              height: 16,
-              decoration: BoxDecoration(
-                  color: const Color(0xFF1D4ED8),
-                  borderRadius: BorderRadius.circular(2))),
-          const SizedBox(width: 8),
-          Text(title,
-              style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF0F172A))),
-        ],
-      );
-
-  Widget _skillPill(String label) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-        decoration: BoxDecoration(
-          color: const Color(0xFFEFF6FF),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: const Color(0xFFBFDBFE)),
-        ),
-        child: Text(label,
-            style: const TextStyle(
-                color: Color(0xFF1E3A8A),
-                fontWeight: FontWeight.w500,
-                fontSize: 13)),
-      );
-
-  Widget _infoTile({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required Color iconBg,
-    required Color iconColor,
-    Color? subtitleColor,
-  }) =>
-      Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: const Color(0xFFF8FAFC),
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration:
-                  BoxDecoration(color: iconBg, shape: BoxShape.circle),
-              child: Icon(icon, color: iconColor, size: 20),
-            ),
-            const SizedBox(width: 14),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title,
-                    style: const TextStyle(
-                        color: Color(0xFF64748B), fontSize: 12)),
-                const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
-                    color: subtitleColor ?? const Color(0xFF0F172A),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      );
-
-  Widget _projectImg(String url) => ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: Image.network(url,
-            height: 120, width: double.infinity, fit: BoxFit.cover),
-      );
-
-  // ── Bottom nav ──────────────────────────────────────────────────────
-  Widget _buildBottomNav() {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 12,
-            offset: const Offset(0, -2),
-          )
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _navIcon(Icons.search_outlined, 'Explore', false),
-          _navIcon(Icons.calendar_today_outlined, 'Bookings', false),
-          _navIcon(Icons.chat_bubble_outline, 'Messages', false),
-          _navIcon(Icons.person, 'Profile', true),
-        ],
-      ),
-    );
-  }
-
-  Widget _navIcon(IconData icon, String label, bool active) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: active
-                  ? const Color(0xFF1D4ED8)
-                  : Colors.transparent,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon,
-                color: active ? Colors.white : const Color(0xFF94A3B8),
-                size: 22),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 10,
-              color: active ? const Color(0xFF1D4ED8) : const Color(0xFF94A3B8),
-              fontWeight:
-                  active ? FontWeight.bold : FontWeight.normal,
-            ),
-          ),
-        ],
-      );
-
-
-  // ── Edit profile bottom sheet ───────────────────────────────────────
-  void _showEditProfileSheet(BuildContext context) {
-    final nameCtrl = TextEditingController(text: (ref.read(workerProvider)?.name ?? 'Worker'));
-    final skillCtrl = TextEditingController(text: (ref.read(workerProvider)?.skills.firstOrNull ?? ''));
-    final expCtrl = TextEditingController(text: '');
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (_) => Padding(
-        padding: EdgeInsets.only(
-          left: 24,
-          right: 24,
-          top: 20,
-          bottom: MediaQuery.of(context).viewInsets.bottom + 24,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Handle
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(2)),
+                ],
               ),
             ),
             const SizedBox(height: 16),
-            const Text('Edit Profile',
-                style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF0F172A))),
-            const SizedBox(height: 20),
-            _editField(controller: nameCtrl, label: 'Full Name', icon: Icons.person_outline),
-            const SizedBox(height: 14),
-            _editField(controller: skillCtrl, label: 'Primary Skill', icon: Icons.work_outline),
-            const SizedBox(height: 14),
-            _editField(
-                controller: expCtrl,
-                label: 'Experience (years)',
-                icon: Icons.timeline,
-                keyboard: TextInputType.number),
-            const SizedBox(height: 14),
-            // Phone – read only
-            TextFormField(
-              initialValue: (ref.watch(workerProvider)?.phone ?? ''),
-              readOnly: true,
-              style: const TextStyle(color: Color(0xFF94A3B8)),
-              decoration: InputDecoration(
-                labelText: 'Phone Number (cannot be changed)',
-                labelStyle: const TextStyle(color: Color(0xFF94A3B8)),
-                prefixIcon: const Icon(Icons.lock_outline, color: Color(0xFF94A3B8)),
-                filled: true,
-                fillColor: const Color(0xFFF1F5F9),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
+
+            // About Section
+            Container(
+              decoration: BoxDecoration(
+                color: AppColors.darkSurfaceContainerHighest,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('About', style: TextStyle(color: AppColors.primaryContainer, fontSize: 16, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Seasoned professional with a focus on residential and commercial electrical systems and modern plumbing solutions. Committed to safety standards and high-quality craftsmanship in every project.',
+                    style: TextStyle(color: AppColors.darkOnSurfaceVariant, fontSize: 13, height: 1.5),
+                  ),
+                  const SizedBox(height: 20),
+                  const Text('EXPERTISE', style: TextStyle(color: AppColors.darkOnSurfaceVariant, fontSize: 10, letterSpacing: 1.2, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: skills.map((s) => Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: AppColors.darkSurface,
+                        border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(s, style: const TextStyle(color: AppColors.primaryContainer, fontSize: 12)),
+                    )).toList(),
+                  ),
+                  const SizedBox(height: 20),
+                  const Text('SERVICE AREA', style: TextStyle(color: AppColors.darkOnSurfaceVariant, fontSize: 10, letterSpacing: 1.2, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 10),
+                  const Row(
+                    children: [
+                      Icon(Icons.location_on, color: AppColors.primaryContainer, size: 16),
+                      SizedBox(width: 8),
+                      Text('Indiranagar, Bangalore', style: TextStyle(color: Colors.white, fontSize: 13)),
+                    ],
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
+
+            // Stats
+            Container(
+              decoration: BoxDecoration(
+                color: AppColors.darkSurfaceContainerHighest,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              padding: const EdgeInsets.symmetric(vertical: 24),
+              width: double.infinity,
+              child: const Column(
+                children: [
+                  Text('5+', style: TextStyle(color: AppColors.primaryContainer, fontSize: 32, fontWeight: FontWeight.w900)),
+                  Text('YEARS EXPERIENCE', style: TextStyle(color: AppColors.darkOnSurfaceVariant, fontSize: 10, letterSpacing: 1.2, fontWeight: FontWeight.bold)),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              decoration: BoxDecoration(
+                color: AppColors.darkSurfaceContainerHighest,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              padding: const EdgeInsets.symmetric(vertical: 24),
+              width: double.infinity,
+              child: const Column(
+                children: [
+                  Text('98%', style: TextStyle(color: AppColors.secondary, fontSize: 32, fontWeight: FontWeight.w900)),
+                  Text('JOB COMPLETION', style: TextStyle(color: AppColors.darkOnSurfaceVariant, fontSize: 10, letterSpacing: 1.2, fontWeight: FontWeight.bold)),
+                ],
+              ),
+            ),
+            const SizedBox(height: 32),
+
+            // Portfolio
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Portfolio', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                TextButton(
+                  onPressed: () {},
+                  child: const Text('View All >', style: TextStyle(color: AppColors.primaryContainer, fontSize: 12)),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            GridView.count(
+              crossAxisCount: 2,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              children: [
+                _buildPortfolioItem('https://images.unsplash.com/photo-1540569014015-19a7be504e3a?w=400'),
+                _buildPortfolioItem('https://images.unsplash.com/photo-1581092921461-eab62e97a780?w=400'),
+                _buildPortfolioItem('https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?w=400'),
+                _buildPortfolioItem('https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=400'),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // Testimonial
+            Container(
+              decoration: BoxDecoration(
+                color: AppColors.darkSurfaceContainerHighest,
+                borderRadius: BorderRadius.circular(20),
+                border: const Border(left: BorderSide(color: AppColors.primary, width: 4)),
+              ),
+              padding: const EdgeInsets.all(20),
+              child: const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('"', style: TextStyle(color: AppColors.primaryContainer, fontSize: 32, fontWeight: FontWeight.bold, height: 1)),
+                  Text(
+                    '"Suresh did an incredible job with our home renovation. He was punctual, professional, and his attention to detail is unmatched in Bangalore."',
+                    style: TextStyle(color: Colors.white, fontSize: 14, fontStyle: FontStyle.italic, height: 1.5),
+                  ),
+                  SizedBox(height: 16),
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 16,
+                        backgroundColor: AppColors.outline,
+                      ),
+                      SizedBox(width: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Aditi Rao', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                          Text('VERIFIED CUSTOMER', style: TextStyle(color: AppColors.darkOnSurfaceVariant, fontSize: 8)),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 32),
+
+            // Save & Continue
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  final current = ref.read(workerProvider);
-                  if (current != null) {
-                    final newName = nameCtrl.text.trim().isNotEmpty ? nameCtrl.text.trim() : current.name;
-                    final newSkill = skillCtrl.text.trim().isNotEmpty ? skillCtrl.text.trim() : null;
-                    final newSkills = newSkill != null ? [newSkill, ...current.skills.skip(1)] : current.skills;
-                    ref.read(workerProvider.notifier).updateWorker(
-                      current.copyWith(name: newName, skills: newSkills));
-                  }
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Profile updated successfully!'),
-                      backgroundColor: Color(0xFF047857),
-                    ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1D4ED8),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 15),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)),
-                  elevation: 0,
+              child: FilledButton(
+                onPressed: () => context.pop(),
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  padding: const EdgeInsets.symmetric(vertical: 18),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                child: const Text('Save Changes',
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold, fontSize: 15)),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text('Save & Continue', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                    SizedBox(width: 8),
+                    Icon(Icons.arrow_forward, size: 16),
+                  ],
+                ),
               ),
             ),
+            const SizedBox(height: 48), // Padding for shell nav
           ],
         ),
       ),
     );
   }
 
-  Widget _editField({
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-    TextInputType keyboard = TextInputType.text,
-  }) =>
-      TextFormField(
-        controller: controller,
-        keyboardType: keyboard,
-        decoration: InputDecoration(
-          labelText: label,
-          prefixIcon: Icon(icon, color: const Color(0xFF1D4ED8)),
-          filled: true,
-          fillColor: const Color(0xFFF8FAFC),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide:
-                const BorderSide(color: Color(0xFF1D4ED8), width: 1.5),
-          ),
-        ),
-      );
+  Widget _buildPortfolioItem(String url) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.darkSurfaceContainerHighest,
+        borderRadius: BorderRadius.circular(16),
+        image: DecorationImage(image: NetworkImage(url), fit: BoxFit.cover),
+      ),
+    );
+  }
 }
-

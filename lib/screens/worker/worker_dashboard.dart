@@ -248,10 +248,10 @@ class _JobCard extends StatelessWidget {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: (job['color'] as Color).withValues(alpha: 0.1),
+                  color: (job['color'] as Color? ?? const Color(0xFF1D4ED8)).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: Icon(Icons.business_rounded, color: job['color'] as Color, size: 28),
+                child: Icon(Icons.business_rounded, color: job['color'] as Color? ?? const Color(0xFF1D4ED8), size: 28),
               ),
               const SizedBox(width: 12),
               Expanded(

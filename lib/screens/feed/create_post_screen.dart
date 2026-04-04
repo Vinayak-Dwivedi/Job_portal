@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/services/post_service.dart';
 import '../../widgets/feed/post_pending_banner.dart';
 import '../../providers/worker_provider.dart';
+import '../../providers/employer_provider.dart';
+
 
 class CreatePostScreen extends ConsumerStatefulWidget {
   const CreatePostScreen({super.key});
@@ -87,12 +89,26 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
     try {
       // NOTE: For Employer role we would use their provider, assuming Worker for now or extracting from auth.
       final worker = ref.read(workerProvider);
-      final userName = worker?.name ?? 'Unknown User';
-      final isVerified = worker?.isVerified ?? false;
-      final photoUrl = worker?.profilePhotoUrl;
+final employer = ref.read(employerProvider);
+
+final isWorker = worker != null;
+
+final userName = isWorker
+    ? worker.name
+    : employer!.name;
+
+final isVerified = isWorker
+    ? worker.isVerified
+    : employer!.isVerified;
+
+final photoUrl = isWorker
+    ? worker.profilePhotoUrl
+    : employer!.profilePhotoUrl;
+
+final role = isWorker ? 'worker' : 'employer';
 
       await PostService.createPost(
-        userRole: 'worker', // dynamic based on user context
+          userRole: role, // dynamic based on user context
         userName: userName,
         userPhotoUrl: photoUrl,
         isUserVerified: isVerified,

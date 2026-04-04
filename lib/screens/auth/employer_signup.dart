@@ -23,9 +23,11 @@ class _EmployerSignupScreenState extends State<EmployerSignupScreen> {
         'phone': _phoneController.text.trim(),
         'role': 'employer',
         'name': _nameController.text.trim(),
+        'company': _companyController.text.trim(),
         'skill': '',
         'experience': '',
       });
+
     }
   }
 

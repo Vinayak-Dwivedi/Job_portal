@@ -82,10 +82,10 @@ class _JobDetailScreenState extends ConsumerState<JobDetailScreen> {
                             width: 64,
                             height: 64,
                             decoration: BoxDecoration(
-                              color: (job['color'] as Color).withValues(alpha: 0.1),
+                              color: (job['color'] as Color? ?? const Color(0xFF1D4ED8)).withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(16),
                             ),
-                            child: Icon(Icons.business_rounded, color: job['color'] as Color, size: 36),
+                            child: Icon(Icons.business_rounded, color: job['color'] as Color? ?? const Color(0xFF1D4ED8), size: 36),
                           ),
                           const SizedBox(width: 16),
                           Expanded(

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../core/services/post_service.dart';
-import '../../models/post_model.dart';
 import '../../widgets/feed/post_card.dart';
 
 class PostDetailScreen extends StatelessWidget {
@@ -18,7 +17,7 @@ class PostDetailScreen extends StatelessWidget {
         iconTheme: const IconThemeData(color: Colors.black),
         title: const Text('Post', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
       ),
-      body: FutureBuilder<PostModel?>(
+      body: FutureBuilder<Map<String, dynamic>?>(
         future: PostService.getPost(postId),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {

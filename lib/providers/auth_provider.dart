@@ -7,8 +7,13 @@ class AuthNotifier extends Notifier<UserModel?> {
   UserModel? build() => null;
 
   void login(String phone, String role) {
+    final uid = 'uid_${phone.replaceAll(RegExp(r'\D'), '')}';
+    loginWithUid(uid, phone, role);
+  }
+
+  void loginWithUid(String uid, String phone, String role) {
     state = UserModel(
-      uid: 'mock_uid_${phone.replaceAll(' ', '')}',
+      uid: uid,
       phone: phone,
       role: role,
       isVerified: true,

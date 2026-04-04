@@ -6,13 +6,14 @@ class WorkerNotifier extends Notifier<WorkerModel?> {
   WorkerModel? build() => null;
 
   void updateFromSignup({
+    required String uid,
     required String name,
     required String phone,
     required String skill,
     required String experience,
   }) {
     state = WorkerModel(
-      uid: 'mock_uid_${phone.replaceAll(' ', '')}',
+      uid: uid,
       name: name.isNotEmpty ? name : 'Worker',
       phone: phone,
       isVerified: true,
