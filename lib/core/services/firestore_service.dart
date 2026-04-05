@@ -19,6 +19,8 @@ class FirestoreService {
 
       'location': {
         'address': data['location'] ?? '',
+        'lat': double.tryParse(data['latitude']?.toString() ?? '0') ?? 0.0,
+        'lng': double.tryParse(data['longitude']?.toString() ?? '0') ?? 0.0,
       },
 
       'bio': '',

@@ -62,6 +62,21 @@ class WorkerNotifier extends Notifier<WorkerModel?> {
           location: data['location'] is Map ? (data['location']['address'] ?? 'India').toString() : 'India',
           credits: 20,
         );
+      } else {
+        // 🆕 Handle new user WITHOUT a document (fallback)
+        print("ℹ️ Worker Profile document not found, initializing basic state");
+        state = WorkerModel(
+          uid: uid,
+          name: 'Worker',
+          phone: '',
+          isVerified: true,
+          jobCategory: 'blue_collar',
+          jobTitles: [],
+          skills: [],
+          experience: 0,
+          location: 'India',
+          credits: 20,
+        );
       }
     } catch (e) {
       print("❌ Error loading worker profile: $e");

@@ -18,6 +18,8 @@ class OtpVerificationScreen extends ConsumerStatefulWidget {
   final String skill;
   final String experience;
   final String location;
+  final String latitude;
+  final String longitude;
 
   const OtpVerificationScreen({
     super.key,
@@ -28,6 +30,8 @@ class OtpVerificationScreen extends ConsumerStatefulWidget {
     this.skill = '',
     this.experience = '',
     this.location = '',
+    this.latitude = '0',
+    this.longitude = '0',
   });
 
 
@@ -63,15 +67,8 @@ void _verifyOtp() async {
 
     final uid = 'uid_${widget.phone.replaceAll(RegExp(r'\D'), '')}';
 
-    // 🔐 LOGIN (local state)
-    ref.read(authProvider.notifier).loginWithUid(
-      uid,
-      widget.phone,
-      widget.role,
-    );
-
     try {
-      // ✅ SAVE TO FIRESTORE (UNIFIED SERVICE)
+      // ✅ SAVE TO FIRESTORE (UNIFIED SERVICE) - Ensure this completes BEFORE redirecting
       await FirestoreService.saveUser(uid, {
         'name': widget.name,
         'phone': widget.phone,
@@ -80,8 +77,16 @@ void _verifyOtp() async {
         'skills': widget.role == 'worker' ? [widget.skill] : [],
         'experience': int.tryParse(widget.experience) ?? 0,
         'location': widget.location,
+        'latitude': widget.latitude,
+        'longitude': widget.longitude,
       });
 
+      // 🔐 LOGIN (local state) - Move entry after Firestore success
+      ref.read(authProvider.notifier).loginWithUid(
+        uid,
+        widget.phone,
+        widget.role,
+      );
     } catch (e) {
       debugPrint("❌ Firestore error: $e");
     }

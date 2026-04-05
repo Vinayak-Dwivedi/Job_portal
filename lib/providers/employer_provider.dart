@@ -80,6 +80,16 @@ class EmployerNotifier extends Notifier<EmployerProfile?> {
           profilePhotoUrl: (data['profilePhotoUrl'] ?? data['logoUrl'] ?? '').toString(),
           isVerified: true,
         );
+      } else {
+        // 🆕 Handle new employer WITHOUT a document (fallback)
+        print("ℹ️ Employer Profile document not found, initializing basic state");
+        state = EmployerProfile(
+          uid: uid,
+          contactName: 'Employer',
+          companyName: 'Company Name',
+          phone: '',
+          isVerified: true,
+        );
       }
     } catch (e) {
       print("❌ Error loading employer profile: $e");
