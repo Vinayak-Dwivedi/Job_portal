@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/employer_provider.dart';
+import '../../core/theme/app_colors.dart';
 
 class EmployerDashboardScreen extends ConsumerStatefulWidget {
   const EmployerDashboardScreen({super.key});
@@ -29,182 +30,211 @@ class _EmployerDashboardScreenState extends ConsumerState<EmployerDashboardScree
     final employer = ref.watch(employerProvider);
 
     if (employer == null) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(
+        backgroundColor: AppColors.darkSurface,
+        body: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+      );
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: AppColors.darkSurface,
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 20),
-              // ── Header ───────────────────────────────────
-              Row(
-                children: [
-                  CircleAvatar(
-                    radius: 26,
-                    backgroundImage: (employer.profilePhotoUrl != null && employer.profilePhotoUrl!.isNotEmpty)
-                        ? NetworkImage(employer.profilePhotoUrl!)
-                        : const NetworkImage('https://ui-avatars.com/api/?name=Company&background=000839&color=fff'),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Hello, ${employer.companyName.isNotEmpty ? employer.companyName : employer.contactName}',
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w900,
-                            color: Color(0xFF1D4ED8),
-                            letterSpacing: -0.5,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Stack(
-                    children: [
-                      IconButton(
-                        onPressed: () {},
-                        icon: const Icon(Icons.notifications_rounded, color: Color(0xFF475569), size: 28),
-                      ),
-                      Positioned(
-                        right: 12,
-                        top: 12,
-                        child: Container(
-                          width: 10,
-                          height: 10,
-                          decoration: BoxDecoration(
-                            color: Colors.red,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 2),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 32),
-
-              // ── Quick Actions Grid ───────────────────────
-              GridView.count(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: 4,
-                childAspectRatio: 0.8,
-                crossAxisSpacing: 12,
-                children: [
-                  _QuickActionItem(
-                    label: 'Post a Job',
-                    icon: Icons.business_center_rounded,
-                    color: const Color(0xFF2563EB),
-                    onTap: () => context.push('/employer/create-job'),
-                  ),
-                  _QuickActionItem(
-                    label: 'Find Workers',
-                    icon: Icons.person_search_rounded,
-                    color: const Color(0xFF059669),
-                    onTap: () => context.go('/employer/workers'),
-                  ),
-                  _QuickActionItem(
-                    label: 'My Posts',
-                    icon: Icons.list_alt_rounded,
-                    color: const Color(0xFFEA580C),
-                    onTap: () => context.go('/employer/my-jobs'),
-                  ),
-                  _QuickActionItem(
-                    label: 'Payments',
-                    icon: Icons.account_balance_wallet_rounded,
-                    color: const Color(0xFF1E3A8A),
-                    onTap: () {},
-                  ),
-                ],
-              ),
-              const SizedBox(height: 32),
-
-              // ── Stats Row ────────────────────────────────
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
+        child: RefreshIndicator(
+          onRefresh: () async {
+            final auth = ref.read(authProvider);
+            if (auth != null) await ref.read(employerProvider.notifier).loadProfile(auth.uid);
+          },
+          backgroundColor: AppColors.darkSurfaceContainerHighest,
+          color: AppColors.primary,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 20),
+                /// ── Header ───────────────────────────────────
+                Row(
                   children: [
-                    _StatCard(
-                      label: 'Active Jobs',
-                      value: '03',
-                      progress: 0.7,
+                    Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(colors: [Color(0xFF1D4ED8), Color(0xFF60A5FA)]),
+                      ),
+                      child: CircleAvatar(
+                        radius: 26,
+                        backgroundColor: AppColors.darkSurfaceContainer,
+                        backgroundImage: (employer.profilePhotoUrl != null && employer.profilePhotoUrl!.isNotEmpty)
+                            ? NetworkImage(employer.profilePhotoUrl!)
+                            : null,
+                        child: (employer.profilePhotoUrl == null || employer.profilePhotoUrl!.isEmpty)
+                            ? const Icon(Icons.business, color: Colors.white70)
+                            : null,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Hello, ${employer.companyName.isNotEmpty ? employer.companyName : employer.contactName}',
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.white,
+                              letterSpacing: -0.5,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const Text(
+                            'Employer Account • Verified',
+                            style: TextStyle(color: AppColors.darkOnSurfaceVariant, fontSize: 12, fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
+                    ),
+                    _buildIconButton(Icons.notifications_none_rounded, () {}),
+                  ],
+                ),
+                const SizedBox(height: 32),
+
+                /// ── Quick Actions Grid (Updated) ──────────────
+                GridView.count(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisCount: 2,
+                  childAspectRatio: 2.2,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                  children: [
+                    _QuickActionTile(
+                      label: 'Post a Job',
+                      icon: Icons.add_business_rounded,
                       color: const Color(0xFF2563EB),
+                      onTap: () => context.push('/employer/create-job'),
                     ),
-                    const SizedBox(width: 16),
-                    _StatCard(
-                      label: 'Applicants',
-                      value: '47',
-                      progress: 0.5,
+                    _QuickActionTile(
+                      label: 'Create Post',
+                      icon: Icons.edit_note_rounded,
                       color: const Color(0xFF059669),
+                      onTap: () => context.push('/feed/create'),
                     ),
-                    const SizedBox(width: 16),
-                    _StatCard(
-                      label: 'Hired',
-                      value: '0',
-                      progress: 0.1,
-                      color: const Color(0xFFEF4444),
+                    _QuickActionTile(
+                      label: 'Find Workers',
+                      icon: Icons.person_search_rounded,
+                      color: const Color(0xFFEA580C),
+                      onTap: () => context.go('/employer/workers'),
+                    ),
+                    _QuickActionTile(
+                      label: 'Job Postings',
+                      icon: Icons.list_alt_rounded,
+                      color: const Color(0xFF1E3A8A),
+                      onTap: () => context.go('/employer/my-jobs'),
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 40),
+                const SizedBox(height: 32),
 
-              // ── Active Job Posts Section ─────────────────
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Active Job Posts',
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
+                /// ── Stats Row ────────────────────────────────
+                const Text(
+                  'Insights',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Colors.white),
+                ),
+                const SizedBox(height: 16),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      const _StatCard(
+                        label: 'Active Jobs',
+                        value: '03',
+                        progress: 0.7,
+                        color: Color(0xFF2563EB),
+                      ),
+                      const SizedBox(width: 16),
+                      const _StatCard(
+                        label: 'Applicants',
+                        value: '47',
+                        progress: 0.5,
+                        color: Color(0xFF059669),
+                      ),
+                      const SizedBox(width: 16),
+                      const _StatCard(
+                        label: 'Profile Views',
+                        value: '1.2k',
+                        progress: 0.8,
+                        color: Color(0xFF6366F1),
+                      ),
+                    ],
                   ),
-                  TextButton(
-                    onPressed: () => context.go('/employer/my-jobs'),
-                    child: const Text('View All', style: TextStyle(color: Color(0xFF1D4ED8), fontWeight: FontWeight.bold)),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
+                ),
+                const SizedBox(height: 32),
 
-              const _JobCard(
-                title: 'Senior Carpenter',
-                postedDate: '12 Oct, 2023',
-                tags: ['Woodwork', 'Furniture Assembly'],
-                location: 'Mumbai, MH',
-                applicants: 12,
-              ),
-              const SizedBox(height: 16),
-              const _JobCard(
-                title: 'Site Electrician',
-                postedDate: '10 Oct, 2023',
-                tags: ['Wiring', 'Maintenance'],
-                location: 'Pune, MH',
-                applicants: 8,
-              ),
-              const SizedBox(height: 100),
-            ],
+                /// ── Active Job Posts Section ─────────────────
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Recent Listings',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Colors.white),
+                    ),
+                    TextButton(
+                      onPressed: () => context.go('/employer/my-jobs'),
+                      child: const Text('View All', 
+                        style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w900, fontSize: 13)),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+
+                const _JobCard(
+                  title: 'Senior Carpenter',
+                  postedDate: '12 Oct, 2023',
+                  tags: ['Woodwork', 'Furniture'],
+                  location: 'Mumbai, MH',
+                  applicants: 12,
+                ),
+                const SizedBox(height: 12),
+                const _JobCard(
+                  title: 'Site Electrician',
+                  postedDate: '10 Oct, 2023',
+                  tags: ['Wiring', 'Industrial'],
+                  location: 'Pune, MH',
+                  applicants: 8,
+                ),
+                const SizedBox(height: 100),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
+
+  Widget _buildIconButton(IconData icon, VoidCallback onTap) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.darkSurfaceContainer,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.darkSurfaceContainerHighest),
+      ),
+      child: IconButton(
+        onPressed: onTap,
+        icon: Icon(icon, color: Colors.white, size: 24),
+      ),
+    );
+  }
 }
 
-class _QuickActionItem extends StatelessWidget {
+class _QuickActionTile extends StatelessWidget {
   final String label;
   final IconData icon;
   final Color color;
   final VoidCallback onTap;
 
-  const _QuickActionItem({
+  const _QuickActionTile({
     required this.label,
     required this.icon,
     required this.color,
@@ -213,29 +243,36 @@ class _QuickActionItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        GestureDetector(
-          onTap: onTap,
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(color: color.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4)),
-              ],
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          color: AppColors.darkSurfaceContainer,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.darkSurfaceContainerHighest),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: color, size: 22),
             ),
-            child: Icon(icon, color: Colors.white, size: 28),
-          ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                label,
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Colors.white),
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 8),
-        Text(
-          label,
-          textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
-        ),
-      ],
+      ),
     );
   }
 }
@@ -259,30 +296,30 @@ class _StatCard extends StatelessWidget {
       width: 160,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.05),
+        color: AppColors.darkSurfaceContainer,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: color.withOpacity(0.1)),
+        border: Border.all(color: AppColors.darkSurfaceContainerHighest),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             value,
-            style: TextStyle(fontSize: 32, fontWeight: FontWeight.w900, color: color),
+            style: TextStyle(fontSize: 32, fontWeight: FontWeight.w900, color: color, letterSpacing: -1),
           ),
           const SizedBox(height: 4),
           Text(
             label,
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.darkOnSurfaceVariant),
           ),
           const SizedBox(height: 16),
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
               value: progress,
-              backgroundColor: color.withOpacity(0.1),
+              backgroundColor: AppColors.darkSurface,
               valueColor: AlwaysStoppedAnimation<Color>(color),
-              minHeight: 6,
+              minHeight: 4,
             ),
           ),
         ],
@@ -311,12 +348,9 @@ class _JobCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 20, offset: const Offset(0, 10)),
-        ],
+        color: AppColors.darkSurfaceContainer,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.darkSurfaceContainerHighest),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -324,28 +358,32 @@ class _JobCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
-                  ),
-                  Text(
-                    'Posted on $postedDate',
-                    style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
-                  ),
-                ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: Colors.white, letterSpacing: -0.3),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Posted on $postedDate',
+                      style: const TextStyle(fontSize: 12, color: AppColors.darkOnSurfaceVariant, fontWeight: FontWeight.w500),
+                    ),
+                  ],
+                ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFDCFCE7),
+                  color: const Color(0xFFDCFCE7).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: const Color(0xFF059669).withOpacity(0.3)),
                 ),
                 child: const Text(
                   'ACTIVE',
-                  style: TextStyle(color: Color(0xFF059669), fontSize: 11, fontWeight: FontWeight.w900),
+                  style: TextStyle(color: Color(0xFF10B981), fontSize: 10, fontWeight: FontWeight.w900),
                 ),
               ),
             ],
@@ -353,35 +391,35 @@ class _JobCard extends StatelessWidget {
           const SizedBox(height: 16),
           Wrap(
             spacing: 8,
+            runSpacing: 8,
             children: tags.map((t) => _Tag(t)).toList(),
           ),
           const SizedBox(height: 20),
-          const Divider(color: Color(0xFFF1F5F9), height: 1),
-          const SizedBox(height: 16),
           Row(
             children: [
-              const Icon(Icons.location_on_rounded, size: 18, color: Color(0xFF94A3B8)),
+              const Icon(Icons.location_on_rounded, size: 16, color: AppColors.darkOnSurfaceVariant),
               const SizedBox(width: 4),
-              Text(location, style: const TextStyle(color: Color(0xFF64748B), fontSize: 14, fontWeight: FontWeight.w500)),
+              Text(location, style: const TextStyle(color: AppColors.darkOnSurfaceVariant, fontSize: 13, fontWeight: FontWeight.w500)),
               const Spacer(),
-              const Icon(Icons.people_rounded, size: 18, color: Color(0xFF059669)),
+              const Icon(Icons.people_alt_rounded, size: 16, color: Color(0xFF10B981)),
               const SizedBox(width: 4),
-              Text('$applicants applicants', style: const TextStyle(color: Color(0xFF059669), fontSize: 14, fontWeight: FontWeight.w700)),
-              const SizedBox(width: 8),
-              const Icon(Icons.more_vert_rounded, color: Color(0xFF94A3B8)),
+              Text('$applicants applicants', style: const TextStyle(color: Color(0xFF10B981), fontSize: 13, fontWeight: FontWeight.w800)),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
+          const Divider(color: AppColors.darkSurfaceContainerHighest, height: 1),
+          const SizedBox(height: 16),
           InkWell(
             onTap: () {},
             child: const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  'View Applicants',
-                  style: TextStyle(color: Color(0xFF1D4ED8), fontSize: 15, fontWeight: FontWeight.w800),
+                  'Manage Listing',
+                  style: TextStyle(color: AppColors.primary, fontSize: 14, fontWeight: FontWeight.w800),
                 ),
                 SizedBox(width: 8),
-                Icon(Icons.arrow_forward_rounded, size: 18, color: Color(0xFF1D4ED8)),
+                Icon(Icons.arrow_forward_ios_rounded, size: 12, color: AppColors.primary),
               ],
             ),
           ),
@@ -398,14 +436,15 @@ class _Tag extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: const Color(0xFFEFF6FF),
+        color: AppColors.darkSurface,
         borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.darkSurfaceContainerHighest),
       ),
       child: Text(
         text,
-        style: const TextStyle(color: Color(0xFF1D4ED8), fontSize: 12, fontWeight: FontWeight.w700),
+        style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w700),
       ),
     );
   }

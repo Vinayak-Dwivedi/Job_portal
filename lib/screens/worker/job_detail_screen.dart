@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:lottie/lottie.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/demo_data.dart';
-import '../../providers/worker_provider.dart';
 
 class JobDetailScreen extends ConsumerStatefulWidget {
   final String jobId;
@@ -43,7 +42,6 @@ class _JobDetailScreenState extends ConsumerState<JobDetailScreen> {
       (j) => j['id'] == widget.jobId,
       orElse: () => DemoData.sampleJobs.first,
     );
-    final worker = ref.watch(workerProvider);
 
     return Scaffold(
       backgroundColor: Colors.white,

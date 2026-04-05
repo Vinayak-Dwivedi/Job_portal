@@ -1,9 +1,53 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../core/theme/app_colors.dart';
-import '../../core/widgets/primary_button.dart';
-import '../../core/widgets/custom_text_field.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+// ─── Minimal stand-ins so the file compiles without the real imports ──────────
+// Remove these and import your actual files in your project.
+class AppColors {
+  static const primary = Color(0xFF2563EB);
+  static const surface = Color(0xFF1E293B);
+  static const bg = Color(0xFF0F172A);
+}
+
+class PrimaryButton extends StatelessWidget {
+  final String label;
+  final VoidCallback onPressed;
+  const PrimaryButton({super.key, required this.label, required this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      height: 54,
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primary,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(label,
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 16)),
+            const SizedBox(width: 8),
+            const Icon(Icons.arrow_forward, color: Colors.white, size: 18),
+          ],
+        ),
+      ),
+    );
+  }
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// All available skill categories shown as chips.
+
+
 
 class WorkerSignupScreen extends ConsumerStatefulWidget {
   const WorkerSignupScreen({super.key});
@@ -17,8 +61,40 @@ class _WorkerSignupScreenState extends ConsumerState<WorkerSignupScreen> {
 
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
-  final _skillController = TextEditingController();
-  final _expController = TextEditingController();
+  final _emailController = TextEditingController();
+  List<String> _skills = [];
+bool _isLoading = true;
+
+@override
+void initState() {
+  super.initState();
+  fetchSkills();
+}
+
+Future<void> fetchSkills() async {
+  final snapshot = await FirebaseFirestore.instance
+      .collection('job_categories')
+      .where('isActive', isEqualTo: true)
+      .get();
+
+  final skills = snapshot.docs
+      .map((doc) => doc['name'].toString())
+      .toList();
+
+  setState(() {
+    _skills = skills;
+    _selectedSkill = skills.isNotEmpty ? skills[0] : '';
+    _isLoading = false;
+  });
+}
+  /// Skill selected via dropdown (single selection, matching request)
+  String _selectedSkill = '';
+
+  /// Experience in years
+  int _experience = 0;
+
+  /// Location label shown in the map card
+  String _locationLabel = 'Andheri East, Mumbai';
 
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
@@ -26,8 +102,10 @@ class _WorkerSignupScreenState extends ConsumerState<WorkerSignupScreen> {
         'phone': _phoneController.text.trim(),
         'role': 'worker',
         'name': _nameController.text.trim(),
-        'skill': _skillController.text.trim(),
-        'experience': _expController.text.trim(),
+        'skill': _selectedSkill,
+        'experience': _experience.toString(),
+        'email': _emailController.text.trim(),
+        'location': _locationLabel,
       });
     }
   }
@@ -36,221 +114,566 @@ class _WorkerSignupScreenState extends ConsumerState<WorkerSignupScreen> {
   void dispose() {
     _nameController.dispose();
     _phoneController.dispose();
-    _skillController.dispose();
-    _expController.dispose();
+    _emailController.dispose();
     super.dispose();
   }
-@override
-Widget build(BuildContext context) {
-  return Scaffold(
-    backgroundColor: const Color(0xFF0F172A),
-    appBar: AppBar(
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back, color: Colors.white),
-        onPressed: () => context.pop(),
+
+  // ── Reusable label widget ────────────────────────────────────────────────
+  Widget _sectionLabel(String text, Color accentColor) {
+    return Row(
+      children: [
+        Container(
+          width: 4,
+          height: 20,
+          decoration: BoxDecoration(
+            color: accentColor,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Text(text,
+            style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 16)),
+      ],
+    );
+  }
+
+  // ── Styled text field ────────────────────────────────────────────────────
+  Widget _textField({
+    required String label,
+    required String hint,
+    required TextEditingController controller,
+    TextInputType keyboardType = TextInputType.text,
+    String? Function(String?)? validator,
+    Widget? prefixWidget,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label,
+            style: const TextStyle(color: Colors.grey, fontSize: 13)),
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: controller,
+          keyboardType: keyboardType,
+          validator: validator,
+          style: const TextStyle(color: Colors.white),
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: TextStyle(color: Colors.grey.shade600),
+            filled: true,
+            fillColor: AppColors.surface,
+            prefixIcon: prefixWidget,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.redAccent),
+            ),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          ),
+        ),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.bg,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => context.pop(),
+        ),
+        // ── Step indicator ──────────────────────────────────────────────
+        title: _StepIndicator(current: 1, total: 3),
+        centerTitle: true,
       ),
-    ),
-    body: SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              "Create Your Profile",
-              style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white),
-            ),
-
-            const SizedBox(height: 8),
-
-            const Text(
-              "Tell us about your professional expertise and basic details to get started.",
-              style: TextStyle(color: Colors.grey),
-            ),
-
-            const SizedBox(height: 24),
-
-            // 🔹 Profile Photo Card
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1E293B),
-                borderRadius: BorderRadius.circular(16),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ── Heading ────────────────────────────────────────────────
+              const Text(
+                "Create Your Profile",
+                style: TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white),
               ),
-              child: Row(
+              const SizedBox(height: 6),
+              const Text(
+                "Tell us about your professional expertise and basic details to get started.",
+                style: TextStyle(color: Colors.grey, fontSize: 13),
+              ),
+              const SizedBox(height: 24),
+
+              // ── Profile photo card ─────────────────────────────────────
+              _ProfilePhotoCard(),
+              const SizedBox(height: 28),
+
+              // ── Personal Information ───────────────────────────────────
+              _sectionLabel("Personal Information", AppColors.primary),
+              const SizedBox(height: 16),
+
+              _textField(
+                label: "Full Name",
+                hint: "e.g. Rajesh Kumar",
+                controller: _nameController,
+                validator: (v) =>
+                    (v == null || v.isEmpty) ? "Full name is required" : null,
+              ),
+              const SizedBox(height: 16),
+
+              // Phone with +91 prefix chip
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    width: 70,
-                    height: 70,
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey.withAlpha(50)),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(Icons.camera_alt, color: Colors.white),
-                  ),
-                  const SizedBox(width: 16),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "Profile Photo",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
+                  const Text("Mobile Number",
+                      style: TextStyle(color: Colors.grey, fontSize: 13)),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      // +91 chip
+                      Container(
+                        height: 54,
+                        padding: const EdgeInsets.symmetric(horizontal: 14),
+                        decoration: BoxDecoration(
+                          color: AppColors.surface,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        alignment: Alignment.center,
+                        child: const Text("+91",
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 15)),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: TextFormField(
+                          controller: _phoneController,
+                          keyboardType: TextInputType.phone,
+                          style: const TextStyle(color: Colors.white),
+                          validator: (v) {
+                            if (v == null || v.isEmpty) {
+                              return "Mobile number is required";
+                            }
+                            if (v.length < 10) {
+                              return "Enter a valid mobile number";
+                            }
+                            return null;
+                          },
+                          decoration: InputDecoration(
+                            hintText: "98765 43210",
+                            hintStyle: TextStyle(color: Colors.grey.shade600),
+                            filled: true,
+                            fillColor: AppColors.surface,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
+                            errorBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide:
+                                  const BorderSide(color: Colors.redAccent),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 16),
                           ),
                         ),
-                        SizedBox(height: 4),
-                        Text(
-                          "Clear photo helps in getting more work",
-                          style: TextStyle(color: Colors.grey, fontSize: 13),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              _textField(
+                label: "Email (Optional)",
+                hint: "rajesh@example.com",
+                controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
+              ),
+              const SizedBox(height: 28),
+
+              // ── Work Details ───────────────────────────────────────────
+              _sectionLabel("Work Details", const Color(0xFF10B981)),
+              const SizedBox(height: 16),
+
+              // Skill Dropdown
+              const Text("Skill Category",
+                  style: TextStyle(color: Colors.grey, fontSize: 13)),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: _isLoading
+                      ? const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 12),
+                          child: Center(
+                            child: SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          ),
+                        )
+                      : DropdownButton<String>(
+                          value: _selectedSkill.isEmpty ? null : _selectedSkill,
+                          isExpanded: true,
+                          dropdownColor: AppColors.surface,
+                          iconEnabledColor: Colors.grey,
+                          style: const TextStyle(color: Colors.white, fontSize: 15),
+                          items: _skills.map((skill) {
+                            return DropdownMenuItem(
+                              value: skill,
+                              child: Text(skill),
+                            );
+                          }).toList(),
+                          onChanged: (val) {
+                            if (val != null) {
+                              setState(() => _selectedSkill = val);
+                            }
+                          },
+                        ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Experience stepper
+              const Text("Years of Experience",
+                  style: TextStyle(color: Colors.grey, fontSize: 13)),
+              const SizedBox(height: 8),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    // Minus button
+                    _StepperButton(
+                      icon: Icons.remove,
+                      onTap: () {
+                        if (_experience > 0) {
+                          setState(() => _experience--);
+                        }
+                      },
+                    ),
+                    Expanded(
+                      child: Column(
+                        children: [
+                          Text(
+                            _experience.toString().padLeft(2, '0'),
+                            style: const TextStyle(
+                                fontSize: 26,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white),
+                          ),
+                          const Text("YEARS",
+                              style:
+                                  TextStyle(color: Colors.grey, fontSize: 11)),
+                        ],
+                      ),
+                    ),
+                    // Plus button
+                    _StepperButton(
+                      icon: Icons.add,
+                      onTap: () => setState(() => _experience++),
+                      filled: true,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // ── Preferred Work Location ────────────────────────────────
+              const Text("Preferred Work Location",
+                  style: TextStyle(color: Colors.grey, fontSize: 13)),
+              const SizedBox(height: 8),
+              _MapCard(
+                label: _locationLabel,
+                onTap: () {
+                  // TODO: open location picker
+                },
+              ),
+              const SizedBox(height: 30),
+
+              // ── Submit ─────────────────────────────────────────────────
+              PrimaryButton(
+                label: "Continue to Verification",
+                onPressed: _submitForm,
+              ),
+              const SizedBox(height: 16),
+
+              // Login link
+              Center(
+                child: GestureDetector(
+                  onTap: () => context.push('/login'),
+                  child: RichText(
+                    text: const TextSpan(
+                      text: "Already have an account? ",
+                      style: TextStyle(color: Colors.grey, fontSize: 13),
+                      children: [
+                        TextSpan(
+                          text: "Log In",
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
                   ),
-                ],
+                ),
               ),
-            ),
+              const SizedBox(height: 24),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
 
-            const SizedBox(height: 24),
+// ── Step indicator dots ──────────────────────────────────────────────────────
+class _StepIndicator extends StatelessWidget {
+  final int current;
+  final int total;
+  const _StepIndicator({required this.current, required this.total});
 
-            // 🔹 PERSONAL INFO
-            const Text(
-              "Personal Information",
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(total, (i) {
+        final active = i + 1 == current;
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          margin: const EdgeInsets.symmetric(horizontal: 4),
+          width: active ? 28 : 8,
+          height: 8,
+          decoration: BoxDecoration(
+            color:
+                active ? AppColors.primary : Colors.grey.withOpacity(0.4),
+            borderRadius: BorderRadius.circular(4),
+          ),
+        );
+      }),
+    );
+  }
+}
+
+// ── Profile photo card ───────────────────────────────────────────────────────
+class _ProfilePhotoCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          Stack(
+            children: [
+              Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  border: Border.all(
+                      color: Colors.grey.withOpacity(0.3), width: 1.5),
+                  borderRadius: BorderRadius.circular(14),
+                  color: const Color(0xFF0F172A),
+                ),
+                child: const Icon(Icons.camera_alt_outlined,
+                    color: Colors.white54, size: 28),
               ),
-            ),
-
-            const SizedBox(height: 16),
-
-            CustomTextField(
-              label: "Full Name",
-              hintText: "Enter your full name",
-              controller: _nameController,
-              validator: (val) => val == null || val.isEmpty ? "Full name is required" : null,
-            ),
-            const SizedBox(height: 16),
-
-            CustomTextField(
-              label: "Mobile Number",
-              hintText: "Enter your mobile number",
-              controller: _phoneController,
-              keyboardType: TextInputType.phone,
-              validator: (val) {
-                if (val == null || val.isEmpty) return "Mobile number is required";
-                if (val.length < 10) return "Enter a valid mobile number";
-                return null;
-              },
-            ),
-
-            // 🔹 WORK DETAILS
-            const SizedBox(height: 24),
-            const Text("Work Details",
-                style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold)),
-
-            const SizedBox(height: 16),
-
-            // Skill dropdown
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1E293B),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: DropdownButton(
-                dropdownColor: const Color(0xFF1E293B),
-                value: _skillController.text.isEmpty
-                    ? "Carpenter"
-                    : _skillController.text,
-                isExpanded: true,
-                underline: const SizedBox(),
-                style: const TextStyle(color: Colors.white),
-                items: ["Carpenter", "Electrician", "Plumber"]
-                    .map((e) => DropdownMenuItem(
-                          value: e,
-                          child: Text(e),
-                        ))
-                    .toList(),
-                onChanged: (val) {
-                  setState(() {
-                    _skillController.text = val!;
-                  });
-                },
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // Experience stepper
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1E293B),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  IconButton(
-                    onPressed: () {
-                      int val = int.tryParse(_expController.text) ?? 0;
-                      if (val > 0) {
-                        val--;
-                        _expController.text = val.toString();
-                        setState(() {});
-                      }
-                    },
-                    icon: const Icon(Icons.remove, color: Colors.white),
+              Positioned(
+                bottom: 0,
+                right: 0,
+                child: Container(
+                  width: 22,
+                  height: 22,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: AppColors.surface, width: 2),
                   ),
-                  Column(
-                    children: [
-                      Text(
-                        _expController.text.isEmpty
-                            ? "0"
-                            : _expController.text,
+                  child: const Icon(Icons.edit, color: Colors.white, size: 11),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(width: 16),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text("Profile Photo",
+                    style: TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.bold)),
+                SizedBox(height: 4),
+                Text(
+                  "Clear facial photo helps in getting 2× more work requests.",
+                  style: TextStyle(color: Colors.grey, fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Stepper +/- button ───────────────────────────────────────────────────────
+class _StepperButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  final bool filled;
+
+  const _StepperButton({
+    required this.icon,
+    required this.onTap,
+    this.filled = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          color: filled ? AppColors.primary : const Color(0xFF0F172A),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(icon, color: Colors.white, size: 20),
+      ),
+    );
+  }
+}
+
+// ── Fake map card (replace with actual map widget) ───────────────────────────
+class _MapCard extends StatelessWidget {
+  final String label;
+  final VoidCallback onTap;
+
+  const _MapCard({required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 130,
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Stack(
+          children: [
+            // Map placeholder grid pattern
+            CustomPaint(
+              size: const Size(double.infinity, 130),
+              painter: _MapGridPainter(),
+            ),
+            // Pin icons
+            const Positioned(
+              top: 28,
+              left: 90,
+              child: Icon(Icons.location_on, color: Colors.white38, size: 22),
+            ),
+            const Positioned(
+              top: 55,
+              left: 40,
+              child: Icon(Icons.location_on, color: Colors.white24, size: 18),
+            ),
+            // Location detect button
+            Positioned(
+              top: 12,
+              right: 12,
+              child: Container(
+                width: 36,
+                height: 36,
+                decoration: const BoxDecoration(
+                  color: AppColors.primary,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.my_location,
+                    color: Colors.white, size: 18),
+              ),
+            ),
+            // Bottom label
+            Positioned(
+              bottom: 12,
+              left: 12,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E293B).withOpacity(0.95),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.location_on,
+                        color: AppColors.primary, size: 14),
+                    const SizedBox(width: 5),
+                    Text(label,
                         style: const TextStyle(
-                            fontSize: 20, color: Colors.white),
-                      ),
-                      const Text("YEARS",
-                          style: TextStyle(color: Colors.grey)),
-                    ],
-                  ),
-                  IconButton(
-                    onPressed: () {
-                      int val = int.tryParse(_expController.text) ?? 0;
-                      val++;
-                      _expController.text = val.toString();
-                      setState(() {});
-                    },
-                    icon: const Icon(Icons.add, color: Colors.white),
-                  ),
-                ],
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500)),
+                  ],
+                ),
               ),
-            ),
-
-            const SizedBox(height: 30),
-
-            // 🔹 BUTTON
-            PrimaryButton(
-              label: "Continue to Verification",
-              onPressed: _submitForm,
             ),
           ],
         ),
       ),
-    ),
-  );
+    );
+  }
 }
-  // Removed unused _inputField helper
+
+// Grid painter for map placeholder
+class _MapGridPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white.withOpacity(0.04)
+      ..strokeWidth = 1;
+    const step = 24.0;
+    for (double x = 0; x < size.width; x += step) {
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+    }
+    for (double y = 0; y < size.height; y += step) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_MapGridPainter oldDelegate) => false;
 }

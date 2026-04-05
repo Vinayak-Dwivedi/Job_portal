@@ -17,38 +17,35 @@ class PostService {
     return await ref.getDownloadURL();
   }
 
-  // 🔥 Create Post
+  // 🔥 Create Post (Unified Schema)
   static Future<void> createPost({
-    required String userRole,
-    required String userName,
-    String? userPhotoUrl,
-    required bool isUserVerified,
-    String? title,
-    required String description,
+    required String uid,
+    required String name,
+    required String role,
+    required String text,
     List<File>? imageFiles,
     String? location,
+    String? profilePhotoUrl,
+    required bool isVerified,
   }) async {
-    List<String> imageUrls = [];
+    String? imageUrl;
 
     if (imageFiles != null && imageFiles.isNotEmpty) {
-      for (var file in imageFiles) {
-        String url = await uploadImage(file);
-        imageUrls.add(url);
-      }
+      // For the unified schema we take the first image if multiple are provided
+      imageUrl = await uploadImage(imageFiles.first);
     }
 
     await _firestore.collection('posts').add({
-      'userRole': userRole,
-      'userName': userName,
-      'userPhotoUrl': userPhotoUrl ?? "",
-      'isUserVerified': isUserVerified,
-      'title': title ?? "",
-      'description': description,
-      'imageUrls': imageUrls,
+      'uid': uid,
+      'name': name,
+      'role': role,
+      'text': text,
+      'imageUrl': imageUrl,
       'location': location ?? "",
+      'profilePhotoUrl': profilePhotoUrl ?? "",
+      'isVerified': isVerified,
       'likes': 0,
       'comments': 0,
-      'status': 'approved', // Auto-approve for now or set to pending
       'createdAt': FieldValue.serverTimestamp(),
     });
   }

@@ -13,175 +13,237 @@ class VerificationSuccessScreen extends ConsumerWidget {
     final isEmployer = user?.role == 'employer';
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: const Color(0xFF050A15), // Deep dark navy 
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const Spacer(),
-              // ── Central Dynamic Graphic ──────────────────
-              Center(
-                child: SizedBox(
-                  width: 240,
-                  height: 240,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      // Outer faint ring
-                      Container(
-                        width: 240,
-                        height: 240,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: const Color(0xFFBFDBFE).withValues(alpha: 0.5), width: 1),
-                        ),
-                      ).animate(onPlay: (controller) => controller.repeat())
-                       .scale(begin: const Offset(0.8, 0.8), end: const Offset(1.2, 1.2), duration: 2.seconds, curve: Curves.easeInOut)
-                       .fadeOut(duration: 2.seconds),
-
-                      // Middle ring
-                      Container(
-                        width: 180,
-                        height: 180,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: const Color(0xFF6EE7B7).withValues(alpha: 0.8), width: 1.5),
-                        ),
-                      ).animate(onPlay: (controller) => controller.repeat())
-                       .scale(begin: const Offset(0.9, 0.9), end: const Offset(1.1, 1.1), duration: 1.5.seconds, curve: Curves.easeInOut),
-
-                      // Core green circle
-                      Container(
-                        width: 120,
-                        height: 120,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: const Color(0xFF10B981),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFF10B981).withValues(alpha: 0.4),
-                              blurRadius: 30,
-                              offset: const Offset(0, 10),
-                            ),
-                          ],
-                        ),
-                        child: const Center(
-                          child: Icon(Icons.check_rounded, color: Colors.white, size: 70),
-                        ),
-                      ).animate().scale(duration: 600.ms, curve: Curves.elasticOut)
-                       .shimmer(delay: 800.ms, duration: 1.5.seconds),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 48),
               
+              // ── Central Check Icon Graphic ──────────────────
+              Center(
+                child: Container(
+                  height: 120,
+                  width: 120,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Color(0xFF111E2E), // Subtle dark aura
+                  ),
+                  child: Center(
+                    child: Container(
+                      height: 60,
+                      width: 60,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Color(0xFF86EFAC), // Bright green
+                      ),
+                      child: const Icon(
+                        Icons.check_rounded,
+                        color: Color(0xFF050A15),
+                        size: 40,
+                        weight: 800,
+                      ),
+                    ),
+                  ),
+                ).animate().scale(duration: 600.ms, curve: Curves.elasticOut),
+              ),
+              
+              const SizedBox(height: 32),
+              
+              // ── Heading & Subtitle ────────────────────────
               const Text(
-                'Verification Successful!',
+                'Verification\nSuccessful!',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: Color(0xFF0F172A), letterSpacing: -0.5),
+                style: TextStyle(
+                  fontSize: 34,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                  height: 1.1,
+                  letterSpacing: -0.5,
+                ),
               ).animate().fadeIn(delay: 300.ms).moveY(begin: 20, end: 0),
 
               const SizedBox(height: 16),
               
               Text(
-                isEmployer 
-                  ? 'Your identity is verified. You can now post jobs and hire skilled workers instantly.'
-                  : 'Congratulations! Your profile is now verified. You have earned the "Verified Karigar" badge.',
+                isEmployer
+                    ? 'You can now post premium jobs\nand hire high-value workers.'
+                    : 'You can now apply for premium jobs\nand high-value projects.',
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 16, color: Color(0xFF64748B), height: 1.6),
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: Color(0xFF94A3B8),
+                  height: 1.4,
+                ),
               ).animate().fadeIn(delay: 500.ms).moveY(begin: 10, end: 0),
 
-              const SizedBox(height: 40),
+              const SizedBox(height: 48),
 
-              // ── Verified Badge Card ──────────────────────
+              // ── Identity Confirmed Card ───────────────────
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.03),
-                      blurRadius: 20,
-                      offset: const Offset(0, 10),
-                    )
-                  ],
+                  color: const Color(0xFF151C2B), // Dark surface
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.white.withAlpha(10)),
                 ),
                 child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      height: 56,
-                      width: 56,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFD1FAE5),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.verified_user_rounded, color: Color(0xFF059669), size: 30),
+                    Stack(
+                      alignment: Alignment.bottomRight,
+                      children: [
+                        CircleAvatar(
+                          radius: 28,
+                          backgroundColor: const Color(0xFF1E293B),
+                          child: const Icon(Icons.person, color: Colors.grey, size: 28),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.all(2),
+                          decoration: const BoxDecoration(
+                            color: Color(0xFF151C2B),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: const BoxDecoration(
+                              color: Color(0xFF059669),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.verified, color: Colors.white, size: 10),
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 20),
-                    const Expanded(
+                    const SizedBox(width: 16),
+                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'Verified Badge Active',
-                            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17, color: Color(0xFF0F172A)),
+                          const Text(
+                            'Identity Confirmed',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 17,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                          SizedBox(height: 4),
+                          const SizedBox(height: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF064E3B).withAlpha(150),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.verified, color: Color(0xFF34D399), size: 12),
+                                const SizedBox(width: 6),
+                                Text(
+                                  isEmployer ? 'VERIFIED EMPLOYER' : 'VERIFIED WORKER',
+                                  style: const TextStyle(
+                                    color: Color(0xFF34D399),
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 12),
                           Text(
-                            'Trust score increased by 40%',
-                            style: TextStyle(color: Color(0xFF10B981), fontSize: 13, fontWeight: FontWeight.w600),
+                            isEmployer
+                                ? 'Badge added to your public profile. Workers will see this on all your job posts.'
+                                : 'Badge added to your public profile. Clients will see this on all your applications.',
+                            style: TextStyle(
+                              color: Colors.grey.shade500,
+                              fontSize: 12,
+                              height: 1.4,
+                            ),
                           ),
                         ],
                       ),
                     ),
                   ],
                 ),
-              ).animate().fadeIn(delay: 800.ms).scale(begin: const Offset(0.95, 0.95)),
+              ).animate().fadeIn(delay: 700.ms).moveY(begin: 20, end: 0),
 
               const Spacer(),
 
-              // ── Action Button ────────────────────────────
+              // ── Buttons ──────────────────────────────────
               SizedBox(
                 width: double.infinity,
-                child: Hero(
-                  tag: 'auth_button',
-                  child: ElevatedButton(
-                    onPressed: () {
-                      if (isEmployer) {
-                        context.go('/employer/dashboard');
-                      } else {
-                        context.go('/worker/dashboard');
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1A56DB),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 20),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      elevation: 8,
-                      shadowColor: const Color(0xFF1A56DB).withValues(alpha: 0.4),
+                height: 56,
+                child: ElevatedButton(
+                  onPressed: () {
+                    if (isEmployer) {
+                      context.go('/employer/dashboard');
+                    } else {
+                      context.go('/worker/dashboard');
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF1D4ED8), // Primary blue
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Text(
-                      'Go to Dashboard',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, letterSpacing: 0.5),
+                    elevation: 0,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: const [
+                      Text(
+                        'Go to Dashboard',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(width: 8),
+                      Icon(Icons.arrow_forward, color: Colors.white, size: 20),
+                    ],
+                  ),
+                ),
+              ).animate().fadeIn(delay: 900.ms),
+
+              const SizedBox(height: 16),
+
+              SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: TextButton(
+                  onPressed: () {
+                    if (isEmployer) {
+                      context.go('/employer/profile');
+                    } else {
+                      context.go('/worker/profile');
+                    }
+                  },
+                  style: TextButton.styleFrom(
+                    backgroundColor: const Color(0xFF0F172A),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(color: Colors.white.withAlpha(10)),
+                    ),
+                  ),
+                  child: const Text(
+                    'View My Profile',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
-              ).animate().fadeIn(delay: 1.seconds).moveY(begin: 30, end: 0),
+              ).animate().fadeIn(delay: 1.seconds),
 
-              const SizedBox(height: 24),
-              
-              const Text(
-                'BHARAT KARIGAR • PREMIUM NETWORK',
-                style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 2),
-              ).animate().fadeIn(delay: 1.2.seconds),
-              
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
             ],
           ),
         ),
@@ -189,4 +251,3 @@ class VerificationSuccessScreen extends ConsumerWidget {
     );
   }
 }
-

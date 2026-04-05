@@ -7,6 +7,7 @@ class EmployerProfile {
   final String companyName;
   final String phone;
   final String? profilePhotoUrl;
+  final String location;
   final bool isVerified;
 
   EmployerProfile({
@@ -14,6 +15,7 @@ class EmployerProfile {
     this.contactName = '',   // ✅ FIX
     this.companyName = '',   // ✅ FIX
     this.phone = '',         // ✅ FIX
+    this.location = '',
     this.profilePhotoUrl,
     this.isVerified = false,
   });
@@ -26,6 +28,7 @@ class EmployerProfile {
     String? contactName,
     String? companyName,
     String? phone,
+    String? location,
     String? profilePhotoUrl,
     bool? isVerified,
   }) {
@@ -34,6 +37,7 @@ class EmployerProfile {
       contactName: contactName ?? this.contactName,
       companyName: companyName ?? this.companyName,
       phone: phone ?? this.phone,
+      location: location ?? this.location,
       profilePhotoUrl: profilePhotoUrl ?? this.profilePhotoUrl,
       isVerified: isVerified ?? this.isVerified,
     );
@@ -63,18 +67,19 @@ class EmployerNotifier extends Notifier<EmployerProfile?> {
 
   Future<void> loadProfile(String uid) async {
     try {
-      final doc = await FirebaseFirestore.instance.collection('employers').doc(uid).get();
+      final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
       if (doc.exists && doc.data() != null) {
         final data = doc.data()!;
         print("🔥 DATA FROM FIRESTORE: $data");
         state = EmployerProfile(
-  uid: uid,
-  contactName: (data['name'] ?? '').toString(),
-  companyName: (data['companyName'] ?? data['company'] ?? '').toString(),
-  phone: (data['phone'] ?? '').toString(),
-  profilePhotoUrl: (data['logoUrl'] ?? '').toString(),
-  isVerified: true,
-);
+          uid: uid,
+          contactName: (data['name'] ?? '').toString(),
+          companyName: (data['companyName'] ?? data['company'] ?? '').toString(),
+          phone: (data['phone'] ?? '').toString(),
+          location: data['location'] is Map ? (data['location']['address'] ?? '').toString() : (data['location'] ?? '').toString(),
+          profilePhotoUrl: (data['profilePhotoUrl'] ?? data['logoUrl'] ?? '').toString(),
+          isVerified: true,
+        );
       }
     } catch (e) {
       print("❌ Error loading employer profile: $e");

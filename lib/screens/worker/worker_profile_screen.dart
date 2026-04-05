@@ -114,7 +114,7 @@ class WorkerProfileScreen extends ConsumerWidget {
                       Expanded(
                         child: OutlinedButton(
                           onPressed: () {
-                            context.push('/worker/profile/edit');
+                            context.push('/edit-profile');
                           },
                           style: OutlinedButton.styleFrom(
                             side: const BorderSide(color: AppColors.outline),

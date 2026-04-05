@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/worker_model.dart';
 
 class WorkerNotifier extends Notifier<WorkerModel?> {
@@ -20,6 +21,7 @@ class WorkerNotifier extends Notifier<WorkerModel?> {
       jobCategory: 'blue_collar',
       jobTitles: skill.isNotEmpty ? [skill] : [],
       skills: skill.isNotEmpty ? [skill] : [],
+      experience: int.tryParse(experience) ?? 0,
       location: 'India',
       credits: 20,
     );
@@ -37,6 +39,33 @@ class WorkerNotifier extends Notifier<WorkerModel?> {
   void updateSkills(List<String> skills) {
     if (state == null) return;
     state = state!.copyWith(skills: skills);
+  }
+  Future<void> loadProfile(String uid) async {
+    try {
+      final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      if (doc.exists && doc.data() != null) {
+        final data = doc.data()!;
+        final skillsList = data['skills'];
+        List<String> parsedSkills = [];
+        if (skillsList is List) {
+          parsedSkills = List<String>.from(skillsList);
+        }
+        state = WorkerModel(
+          uid: uid,
+          name: (data['name'] ?? '').toString(),
+          phone: (data['phone'] ?? '').toString(),
+          isVerified: true,
+          jobCategory: 'blue_collar',
+          jobTitles: parsedSkills.isNotEmpty ? [parsedSkills.first] : [],
+          skills: parsedSkills,
+          experience: int.tryParse(data['experience']?.toString() ?? '0') ?? 0,
+          location: data['location'] is Map ? (data['location']['address'] ?? 'India').toString() : 'India',
+          credits: 20,
+        );
+      }
+    } catch (e) {
+      print("❌ Error loading worker profile: $e");
+    }
   }
 }
 

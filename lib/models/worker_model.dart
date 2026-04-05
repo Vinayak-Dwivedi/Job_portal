@@ -10,7 +10,7 @@ class WorkerModel {
   final String jobCategory; // "blue_collar", "white_collar", "both"
   final List<String> jobTitles;
   final List<String> skills;
-  // experience & education can be implemented later
+  final int experience;
   
   // From user collection
   final bool isVerified;
@@ -28,9 +28,10 @@ class WorkerModel {
     this.jobCategory = 'blue_collar',
     this.jobTitles = const [],
     this.skills = const [],
+    this.experience = 0,
     this.isVerified = false,
     required this.phone,
-    this.email,
+    this.email = '',
     this.credits = 0,
   });
 
@@ -48,6 +49,7 @@ class WorkerModel {
     String? phone,
     String? email,
     int? credits,
+    int? experience,
   }) {
     return WorkerModel(
       uid: uid ?? this.uid,
@@ -59,6 +61,7 @@ class WorkerModel {
       jobCategory: jobCategory ?? this.jobCategory,
       jobTitles: jobTitles ?? this.jobTitles,
       skills: skills ?? this.skills,
+      experience: experience ?? this.experience,
       isVerified: isVerified ?? this.isVerified,
       phone: phone ?? this.phone,
       email: email ?? this.email,
@@ -75,6 +78,7 @@ class WorkerModel {
       'jobCategory': jobCategory,
       'jobTitles': jobTitles,
       'skills': skills,
+      'experience': experience,
       'isVerified': isVerified,
       'phone': phone,
       'email': email,
@@ -92,6 +96,7 @@ class WorkerModel {
       jobCategory: map['jobCategory'] ?? 'blue_collar',
       jobTitles: List<String>.from(map['jobTitles'] ?? []),
       skills: List<String>.from(map['skills'] ?? []),
+      experience: int.tryParse(map['experience']?.toString() ?? '0') ?? 0,
       isVerified: map['isVerified'] ?? false,
       phone: map['phone'] ?? '',
       email: map['email'],

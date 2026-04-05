@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../screens/firebase_test_screen.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/worker_provider.dart';
+import '../../providers/employer_provider.dart';
 import '../../screens/splash_landing_screen.dart';
 import '../../screens/user_type_selection.dart';
 import '../../screens/auth/worker_signup.dart';
@@ -12,7 +14,7 @@ import '../../screens/auth/otp_verification_screen.dart';
 import '../../screens/auth/verification_success_screen.dart';
 import '../../screens/worker/worker_dashboard.dart';
 import '../../screens/worker/worker_profile_screen.dart';
-import '../../screens/worker/worker_profile_edit_screen.dart';
+import '../../screens/common/edit_profile_screen.dart';
 import '../../screens/worker/worker_subscription_screen.dart';
 import '../../screens/worker/worker_jobs_screen.dart';
 import '../../screens/employer/employer_dashboard.dart';
@@ -21,10 +23,10 @@ import '../../screens/employer/employer_workers_screen.dart';
 import '../../screens/employer/employer_my_jobs_screen.dart';
 import '../../screens/employer/create_job_screen.dart';
 import '../../screens/worker/job_detail_screen.dart';
-import '../../screens/worker/employer_public_profile_screen.dart';
 import '../../screens/feed/feed_screen.dart';
 import '../../screens/feed/create_post_screen.dart';
 import '../../screens/feed/post_detail_screen.dart';
+import '../../screens/common/public_profile_screen.dart';
 import '../../screens/subscription/subscription_plans_screen.dart';
 import '../../screens/subscription/subscription_checkout_screen.dart';
 import '../../screens/subscription/subscription_success_screen.dart';
@@ -34,6 +36,9 @@ import '../../screens/admin/admin_posts_screen.dart';
 import '../../screens/admin/admin_users_screen.dart';
 import '../../screens/banned_screen.dart';
 import '../../widgets/common/page_transitions.dart';
+
+import '../../widgets/common/ki_bottom_nav_bar.dart';
+
 // Shell scaffold for Worker — holds bottom nav bar
 class WorkerShell extends ConsumerStatefulWidget {
   final Widget child;
@@ -45,106 +50,23 @@ class WorkerShell extends ConsumerStatefulWidget {
 }
 
 class _WorkerShellState extends ConsumerState<WorkerShell> {
-  void _onNavTap(BuildContext context, int index) {
-    switch (index) {
-      case 0:
-        context.go('/worker/dashboard');
-        break;
-      case 1:
-        context.go('/worker/jobs');
-        break;
-      case 2:
-        context.push('/feed');
-        break;
-      case 3:
-        context.go('/worker/subscriptions');
-        break;
-      case 4:
-        context.go('/worker/profile');
-        break;
-    }
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final auth = ref.read(authProvider);
+      if (auth != null) {
+        ref.read(workerProvider.notifier).loadProfile(auth.uid);
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF0B1120),
       body: widget.child,
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.08),
-              blurRadius: 12,
-              offset: const Offset(0, -3),
-            ),
-          ],
-        ),
-        child: SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _navItem(context, 0, Icons.home_outlined, Icons.home, 'Home'),
-                _navItem(context, 1, Icons.work_outline, Icons.work, 'Jobs'),
-                GestureDetector(
-                  onTap: () => _onNavTap(context, 2),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 52,
-                        height: 52,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF1D4ED8),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(Icons.add, color: Colors.white, size: 28),
-                      ),
-                      const SizedBox(height: 2),
-                      const Text('Post', style: TextStyle(fontSize: 10, color: Color(0xFF1D4ED8), fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                ),
-                _navItem(context, 3, Icons.card_membership_outlined, Icons.card_membership, 'Pro'),
-                _navItem(context, 4, Icons.person_outline, Icons.person, 'Profile'),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _navItem(BuildContext context, int index, IconData icon, IconData activeIcon, String label) {
-    final isActive = widget.currentIndex == index;
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: () => _onNavTap(context, index),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              isActive ? activeIcon : icon,
-              color: isActive ? const Color(0xFF1D4ED8) : const Color(0xFF94A3B8),
-              size: 24,
-            ),
-            const SizedBox(height: 3),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 10,
-                color: isActive ? const Color(0xFF1D4ED8) : const Color(0xFF94A3B8),
-                fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
-              ),
-            ),
-          ],
-        ),
-      ),
+      bottomNavigationBar: KIBottomNavBar(currentIndex: widget.currentIndex),
     );
   }
 }
@@ -160,109 +82,23 @@ class EmployerShell extends ConsumerStatefulWidget {
 }
 
 class _EmployerShellState extends ConsumerState<EmployerShell> {
-  void _onNavTap(BuildContext context, int index) {
-    switch (index) {
-      case 0:
-        context.go('/employer/dashboard');
-        break;
-      case 1:
-        context.push('/employer/create-job');
-        break;
-      case 2:
-        context.go('/employer/workers');
-        break;
-      case 3:
-        context.go('/employer/my-jobs');
-        break;
-      case 4:
-        context.go('/employer/profile');
-        break;
-    }
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final auth = ref.read(authProvider);
+      if (auth != null) {
+        ref.read(employerProvider.notifier).loadProfile(auth.uid);
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF0B1120),
       body: widget.child,
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.08),
-              blurRadius: 12,
-              offset: const Offset(0, -3),
-            ),
-          ],
-        ),
-        child: SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _navItem(context, 0, Icons.home_outlined, Icons.home, 'Home'),
-                _navItem(context, 2, Icons.people_outline, Icons.people, 'Workers'),
-                
-                // Central FAB-style Post Button
-                GestureDetector(
-                  onTap: () => _onNavTap(context, 1),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 52,
-                        height: 52,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF1D4ED8),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(Icons.add, color: Colors.white, size: 28),
-                      ),
-                      const SizedBox(height: 2),
-                      const Text('Post Job', style: TextStyle(fontSize: 10, color: Color(0xFF1D4ED8), fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                ),
-
-                _navItem(context, 3, Icons.assignment_outlined, Icons.assignment, 'My Jobs'),
-                _navItem(context, 4, Icons.person_outline, Icons.person, 'Profile'),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _navItem(BuildContext context, int index, IconData icon, IconData activeIcon, String label) {
-    final isActive = widget.currentIndex == index;
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: () => _onNavTap(context, index),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              isActive ? activeIcon : icon,
-              color: isActive ? const Color(0xFF1D4ED8) : const Color(0xFF94A3B8),
-              size: 24,
-            ),
-            const SizedBox(height: 3),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 10,
-                color: isActive ? const Color(0xFF1D4ED8) : const Color(0xFF94A3B8),
-                fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
-              ),
-            ),
-          ],
-        ),
-      ),
+      bottomNavigationBar: KIBottomNavBar(currentIndex: widget.currentIndex),
     );
   }
 }
@@ -281,8 +117,6 @@ final routerProvider = Provider<GoRouter>((ref) {
           state.matchedLocation.startsWith('/otp') ||
           state.matchedLocation.startsWith('/admin') ||
           state.matchedLocation.startsWith('/verified');
-      
-      // Basic ban checking logic here if implemented, or assumed elsewhere
       
       if (isLoggedIn && isAuthRoute) {
         return auth.role == 'employer' ? '/employer/dashboard' : '/worker/dashboard';
@@ -307,6 +141,7 @@ final routerProvider = Provider<GoRouter>((ref) {
               company: extra['company'] ?? '',
               skill: extra['skill'] ?? '',
               experience: extra['experience'] ?? '',
+              location: extra['location'] ?? '',
             ),
           );
         },
@@ -314,6 +149,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/verified', 
         pageBuilder: (context, state) => fadeInPage(state, const VerificationSuccessScreen()),
+      ),
+      GoRoute(
+        path: '/edit-profile',
+        builder: (_, __) => const EditProfileScreen(),
       ),
       
       // Worker shell routes
@@ -331,7 +170,6 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(path: '/worker/jobs', builder: (_, __) => const WorkerJobsScreen()),
           GoRoute(path: '/worker/subscriptions', builder: (_, __) => const WorkerSubscriptionScreen()),
           GoRoute(path: '/worker/profile', builder: (_, __) => const WorkerProfileScreen()),
-          GoRoute(path: '/worker/profile/edit', builder: (_, __) => const WorkerProfileEditScreen()),
         ],
       ),
       // Employer shell routes
@@ -360,11 +198,20 @@ final routerProvider = Provider<GoRouter>((ref) {
           return slideRightPage(state, JobDetailScreen(jobId: id));
         },
       ),
+      
+      // Compatibility Redirect
       GoRoute(
         path: '/employer/:uid',
+        redirect: (context, state) => '/profile/employer/${state.pathParameters['uid']}',
+      ),
+      
+      // Unified Profile Route
+      GoRoute(
+        path: '/profile/:role/:uid',
         pageBuilder: (context, state) {
+          final role = state.pathParameters['role']!;
           final uid = state.pathParameters['uid']!;
-          return slideRightPage(state, EmployerPublicProfileScreen(employerId: uid));
+          return slideRightPage(state, PublicProfileScreen(uid: uid, role: role));
         },
       ),
 

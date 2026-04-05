@@ -11,16 +11,17 @@ final feedProvider = StreamProvider((ref) {
 
             return {
               'id': doc.id,
-              'userName': data['userName'] ?? '',
-              'description': data['description'] ?? '',
-              'imageUrls': data['imageUrls'] ?? [],
+              'uid': data['uid'] ?? '',
+              'name': data['name'] ?? '',
+              'text': data['text'] ?? data['description'] ?? '',
+              'imageUrl': data['imageUrl'],
               'location': data['location'] ?? '',
-              'userRole': data['userRole'] ?? '',
-              'userPhotoUrl': data['userPhotoUrl'] ?? '',
-              'isUserVerified': data['isUserVerified'] ?? false,
-              'title': data['title'] ?? '',
+              'role': data['role'] ?? data['userRole'] ?? '',
+              'profilePhotoUrl': data['profilePhotoUrl'] ?? data['userPhotoUrl'] ?? '',
+              'isVerified': data['isVerified'] ?? data['isUserVerified'] ?? false,
               'likes': data['likes'] ?? 0,
               'comments': data['comments'] ?? 0,
+              'createdAt': data['createdAt'],
             };
           }).toList());
 });
@@ -36,16 +37,17 @@ final pendingPostsProvider = StreamProvider((ref) {
 
             return {
               'id': doc.id,
-              'userName': data['userName'] ?? '',
-              'description': data['description'] ?? '',
-              'imageUrls': data['imageUrls'] ?? [],
+              'uid': data['uid'] ?? '',
+              'name': data['name'] ?? '',
+              'text': data['text'] ?? data['description'] ?? '',
+              'imageUrl': data['imageUrl'],
               'location': data['location'] ?? '',
-              'userRole': data['userRole'] ?? '',
-              'userPhotoUrl': data['userPhotoUrl'] ?? '',
-              'isUserVerified': data['isUserVerified'] ?? false,
-              'title': data['title'] ?? '',
+              'role': data['role'] ?? data['userRole'] ?? '',
+              'profilePhotoUrl': data['profilePhotoUrl'] ?? data['userPhotoUrl'] ?? '',
+              'isVerified': data['isVerified'] ?? data['isUserVerified'] ?? false,
               'likes': data['likes'] ?? 0,
               'comments': data['comments'] ?? 0,
+              'createdAt': data['createdAt'],
             };
           }).toList());
 });

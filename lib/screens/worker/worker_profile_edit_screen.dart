@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../providers/worker_provider.dart';
-import '../profile/profile_image_picker.dart';
 
 class WorkerProfileEditScreen extends ConsumerStatefulWidget {
   const WorkerProfileEditScreen({super.key});
