@@ -1,16 +1,52 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:go_router/go_router.dart';
-import '../../core/theme/app_colors.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:timeago/timeago.dart' as timeago;
+import '../../providers/auth_provider.dart';
+import '../../core/services/post_service.dart';
+import '../../core/theme/app_colors.dart';
+import 'comment_bottom_sheet.dart';
 
-class PostCard extends StatelessWidget {
+class PostCard extends ConsumerStatefulWidget {
   final Map<String, dynamic> post;
 
   const PostCard({super.key, required this.post});
 
   @override
+  ConsumerState<PostCard> createState() => _PostCardState();
+}
+
+class _PostCardState extends ConsumerState<PostCard> {
+  bool _isLiking = false;
+
+  void _toggleLike(String postId, String uid) async {
+    if (_isLiking) return;
+    setState(() => _isLiking = true);
+    await PostService.toggleLike(postId, uid);
+    setState(() => _isLiking = false);
+  }
+
+  void _showComments(BuildContext context, String postId) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => CommentBottomSheet(postId: postId),
+    );
+  }
+
+  void _sharePost(String text) {
+    Share.share(text);
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final post = widget.post;
+    final auth = ref.watch(authProvider);
     final theme = Theme.of(context);
+    final String postId = post['id'] ?? '';
 
     /// 🔥 SAFE FALLBACKS (MANDATORY)
     final String uid = post['uid'] ?? '';
@@ -26,7 +62,7 @@ class PostCard extends StatelessWidget {
     final dynamic createdAt = post['createdAt'];
 
     String timeStr = 'Just now';
-    if (createdAt != null && createdAt is dynamic) {
+    if (createdAt is Timestamp) {
       try {
         final date = createdAt.toDate();
         timeStr = timeago.format(date);
@@ -162,50 +198,83 @@ class PostCard extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(
               children: [
-                const Icon(Icons.thumb_up_alt_outlined, color: Colors.blue, size: 14),
+                const Icon(Icons.thumb_up_alt_rounded, color: Colors.blue, size: 14),
                 const SizedBox(width: 4),
                 Text(
                   "$likes",
-                  style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12),
+                  style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 13, fontWeight: FontWeight.w600),
                 ),
                 const Spacer(),
-                Text(
-                  "$comments comments",
-                  style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12),
+                GestureDetector(
+                  onTap: () => _showComments(context, postId),
+                  child: Text(
+                    "$comments comments",
+                    style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 13),
+                  ),
                 ),
               ],
             ),
           ),
 
-          Divider(color: theme.colorScheme.outline, indent: 16, endIndent: 16),
+          const SizedBox(height: 8),
+          Divider(color: theme.colorScheme.outline.withOpacity(0.3), indent: 16, endIndent: 16),
 
           /// 🔹 ACTIONS
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildActionButton(Icons.thumb_up_off_alt, 'Like', theme),
-              _buildActionButton(Icons.comment_outlined, 'Comment', theme),
-              _buildActionButton(Icons.share_outlined, 'Share', theme),
-              _buildActionButton(Icons.send_outlined, 'Send', theme),
-            ],
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: StreamBuilder<bool>(
+              stream: auth != null ? PostService.isPostLiked(postId, auth.uid) : Stream.value(false),
+              builder: (context, snapshot) {
+                final isLiked = snapshot.data ?? false;
+                return Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _buildActionButton(
+                      isLiked ? Icons.thumb_up_alt_rounded : Icons.thumb_up_off_alt_rounded, 
+                      'Like', 
+                      isLiked ? Colors.blue : theme.colorScheme.onSurfaceVariant,
+                      theme,
+                      onTap: () {
+                        if (auth != null) _toggleLike(postId, auth.uid);
+                      }
+                    ),
+                    _buildActionButton(
+                      Icons.chat_bubble_outline_rounded, 
+                      'Comment', 
+                      theme.colorScheme.onSurfaceVariant,
+                      theme,
+                      onTap: () => _showComments(context, postId)
+                    ),
+                    _buildActionButton(
+                      Icons.share_rounded, 
+                      'Share', 
+                      theme.colorScheme.onSurfaceVariant,
+                      theme,
+                      onTap: () => _sharePost(text)
+                    ),
+                  ],
+                );
+              }
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildActionButton(IconData icon, String label, ThemeData theme) {
+  Widget _buildActionButton(IconData icon, String label, Color color, ThemeData theme, {required VoidCallback onTap}) {
     return InkWell(
-      onTap: () {},
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-        child: Column(
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+        child: Row(
           children: [
-            Icon(icon, color: theme.colorScheme.onSurfaceVariant, size: 20),
-            const SizedBox(height: 4),
+            Icon(icon, color: color, size: 20),
+            const SizedBox(width: 8),
             Text(
               label,
-              style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 10, fontWeight: FontWeight.w600),
+              style: TextStyle(color: color, fontSize: 13, fontWeight: FontWeight.w600),
             ),
           ],
         ),

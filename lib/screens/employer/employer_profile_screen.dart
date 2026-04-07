@@ -16,13 +16,29 @@ class EmployerProfileScreen extends ConsumerWidget {
     final isDark = themeMode == ThemeMode.dark;
     final theme = Theme.of(context);
 
+    if (employer == null) {
+      return Scaffold(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    // Dynamic data
+    final companyName = employer.companyName.isNotEmpty ? employer.companyName : 'Company Name';
+    final businessType = employer.businessType.isNotEmpty ? employer.businessType : 'Business Type';
+    final bio = employer.bio;
+    final rating = employer.rating > 0 ? employer.rating.toStringAsFixed(1) : 'New';
+    final reviews = employer.reviewCount;
+    final officeAddress = employer.officeAddress.isNotEmpty ? employer.officeAddress : 'Address not set';
+
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: theme.scaffoldBackgroundColor,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: theme.colorScheme.primary),
+          icon: Icon(Icons.arrow_back, color: theme.colorScheme.onSurface),
           onPressed: () {
             if (context.canPop()) {
               context.pop();
@@ -31,19 +47,13 @@ class EmployerProfileScreen extends ConsumerWidget {
             }
           },
         ),
-        title: Text(
-          (employer?.companyName != null && employer!.companyName.isNotEmpty) 
-              ? employer.companyName 
-              : 'The Digital Atelier',
-          style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 18),
-        ),
         actions: [
           IconButton(
-            icon: Icon(isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded, color: theme.colorScheme.onSurfaceVariant),
+            icon: Icon(isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded, color: theme.colorScheme.onSurface),
             onPressed: () => ref.read(themeModeProvider.notifier).toggleTheme(),
           ),
           IconButton(
-            icon: Icon(Icons.settings, color: theme.colorScheme.onSurfaceVariant),
+            icon: Icon(Icons.settings_outlined, color: theme.colorScheme.onSurface),
             onPressed: () {
                showModalBottomSheet(
                  context: context,
@@ -54,7 +64,7 @@ class EmployerProfileScreen extends ConsumerWidget {
                      mainAxisSize: MainAxisSize.min,
                      children: [
                        ListTile(
-                         leading: const Icon(Icons.logout, color: Colors.redAccent),
+                         leading: const Icon(Icons.logout_rounded, color: Colors.redAccent),
                          title: const Text('Log Out', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
                          onTap: () {
                            Navigator.pop(context); // close sheet
@@ -70,411 +80,377 @@ class EmployerProfileScreen extends ConsumerWidget {
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Profile Info Header
-            _buildProfileHeader(employer, theme),
-            const SizedBox(height: 24),
-
-            // Action Buttons
-            _buildActionButtons(context, theme),
-            const SizedBox(height: 24),
-
-            // Statistics
-            _buildStatisticsCards(theme),
-            const SizedBox(height: 24),
-
-            // About Section
-            _buildAboutSection(employer, theme),
-            const SizedBox(height: 24),
-
-            // Active Jobs Section
-            _buildActiveJobsSection(theme),
-            const SizedBox(height: 24),
-
-            // Documents Section
-            _buildDocumentsSection(theme),
-            const SizedBox(height: 40), // Bottom padding
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildProfileHeader(EmployerProfile? employer, ThemeData theme) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Stack(
-          clipBehavior: Clip.none,
-          alignment: Alignment.bottomCenter,
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: theme.scaffoldBackgroundColor, width: 2),
-              ),
-              child: CircleAvatar(
-                radius: 40,
-                backgroundColor: theme.colorScheme.surfaceVariant,
-                backgroundImage: (employer?.profilePhotoUrl != null && employer!.profilePhotoUrl!.isNotEmpty)
-                    ? NetworkImage(employer.profilePhotoUrl!)
-                    : null,
-                child: (employer?.profilePhotoUrl == null || employer!.profilePhotoUrl!.isEmpty)
-                    ? Text(
-                        (employer?.companyName != null && employer!.companyName.isNotEmpty) 
-                            ? employer.companyName.substring(0, 2).toUpperCase() 
-                            : 'RA',
-                        style: const TextStyle(color: Colors.amber, fontSize: 24, fontWeight: FontWeight.bold),
-                      )
-                    : null,
-              ),
-            ),
-            Positioned(
-              bottom: -8,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF10B981),
-                  borderRadius: BorderRadius.circular(12),
+            // Premium Header with Background Gradient
+            Stack(
+              alignment: Alignment.center,
+              children: [
+                Container(
+                  height: 240,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        theme.colorScheme.primary.withOpacity(isDark ? 0.3 : 0.1),
+                        theme.scaffoldBackgroundColor,
+                      ],
+                    ),
+                  ),
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: const [
-                    Icon(Icons.check_circle, color: Colors.white, size: 12),
-                    SizedBox(width: 4),
-                    Text('Verified', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                Column(
+                  children: [
+                    const SizedBox(height: 100),
+                    Stack(
+                      alignment: Alignment.bottomRight,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: theme.colorScheme.primary, width: 2),
+                          ),
+                          child: CircleAvatar(
+                            radius: 50,
+                            backgroundColor: theme.colorScheme.surfaceVariant,
+                            backgroundImage: (employer.logoUrl != null && employer.logoUrl!.isNotEmpty)
+                                ? NetworkImage(employer.logoUrl!)
+                                : null,
+                            child: (employer.logoUrl == null || employer.logoUrl!.isEmpty)
+                                ? Text(
+                                    companyName.isNotEmpty ? companyName.substring(0, 1).toUpperCase() : 'E',
+                                    style: TextStyle(color: theme.colorScheme.primary, fontSize: 32, fontWeight: FontWeight.bold),
+                                  )
+                                : null,
+                          ),
+                        ),
+                        if (employer.isVerified)
+                          Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.secondary,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: theme.scaffoldBackgroundColor, width: 2),
+                            ),
+                            child: const Icon(Icons.check, color: Colors.white, size: 16),
+                          ),
+                      ],
+                    ),
                   ],
                 ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 24),
-        Text(
-          (employer?.name != null && employer!.name.isNotEmpty) 
-              ? employer.name 
-              : 'Rajesh Construction',
-          style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 22, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          decoration: BoxDecoration(
-            color: Colors.transparent,
-            border: Border.all(color: theme.colorScheme.outline),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Text(
-            'CIVIL CONSTRUCTION',
-            style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 10, fontWeight: FontWeight.w600, letterSpacing: 0.5),
-          ),
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            const Icon(Icons.star, color: Colors.amber, size: 16),
-            const SizedBox(width: 4),
-            Text('4.9', style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 14)),
-            const SizedBox(width: 6),
-            Text('(156 ratings)', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12)),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0),
-              child: Text('•', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 14)),
-            ),
-            Icon(Icons.location_on, color: theme.colorScheme.onSurfaceVariant, size: 14),
-            const SizedBox(width: 4),
-            Text('Mumbai, MH', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 13)),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildActionButtons(BuildContext context, ThemeData theme) {
-    return Row(
-      children: [
-        Expanded(
-          child: Container(
-            height: 54,
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primary,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: const [
-                Icon(Icons.explore, color: Colors.white, size: 18),
-                SizedBox(width: 10),
-                Text('Discover\nWorkers', textAlign: TextAlign.left, style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14, height: 1.2)),
               ],
             ),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: InkWell(
-            onTap: () {
-              context.push('/edit-profile');
-            },
-            borderRadius: BorderRadius.circular(10),
-            child: Container(
-              height: 54,
-              decoration: BoxDecoration(
-                color: Colors.transparent,
-                border: Border.all(color: theme.colorScheme.outline, width: 1.5),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
                 children: [
-                  Icon(Icons.edit, color: theme.colorScheme.primary, size: 18),
-                  const SizedBox(width: 8),
-                  Text('Edit Profile', style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.w600, fontSize: 14)),
+                  const SizedBox(height: 16),
+                  Text(
+                    companyName,
+                    style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 24, fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: theme.colorScheme.primary.withOpacity(0.2)),
+                    ),
+                    child: Text(
+                      businessType.toUpperCase(),
+                      style: TextStyle(color: theme.colorScheme.primary, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 0.5),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.star_rounded, color: Colors.amber[600], size: 18),
+                      const SizedBox(width: 4),
+                      Text(rating, style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 15)),
+                      const SizedBox(width: 4),
+                      Text('•', style: TextStyle(color: theme.colorScheme.onSurfaceVariant)),
+                      const SizedBox(width: 4),
+                      Text('$reviews Ratings', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 14)),
+                      const SizedBox(width: 8),
+                      Icon(Icons.location_on_rounded, color: theme.colorScheme.onSurfaceVariant, size: 14),
+                      const SizedBox(width: 4),
+                      Text(officeAddress.split(',').last.trim(), style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 14)),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  
+                  // Action Buttons
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {}, // Action to find workers
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: theme.colorScheme.primary,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            elevation: 0,
+                          ),
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.person_search_rounded, size: 18),
+                              SizedBox(width: 8),
+                              Text('Find Workers', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => context.push('/edit-profile'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: theme.colorScheme.onSurface,
+                            side: BorderSide(color: theme.colorScheme.outline),
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          ),
+                          child: const Text('Edit Profile', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 32),
+
+                  // Stats Row
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _StatCard(
+                          value: '12',
+                          label: 'ACTIVE POSTS',
+                          theme: theme,
+                          valueColor: theme.colorScheme.primary,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _StatCard(
+                          value: '45',
+                          label: 'WORKERS HIRED',
+                          theme: theme,
+                          valueColor: theme.colorScheme.secondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 32),
+
+                  // About Section
+                  _SectionHeader(title: 'About Company', theme: theme),
+                  const SizedBox(height: 12),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: theme.cardColor,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: theme.dividerColor.withOpacity(0.05)),
+                    ),
+                    child: Text(
+                      bio.isNotEmpty ? bio : 'No description provided yet. Add your company profile to attract more professional workers.',
+                      style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 14, height: 1.6),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Active Jobs Section
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _SectionHeader(title: 'Active Jobs', theme: theme),
+                      TextButton(
+                        onPressed: () {},
+                        child: Text('See All', style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  _JobCard(
+                    title: 'Master Carpenter',
+                    type: 'Full-time',
+                    salary: '₹28k - 35k',
+                    applicants: 42,
+                    theme: theme,
+                    isUrgent: true,
+                  ),
+                  _JobCard(
+                    title: 'Industrial Electrician',
+                    type: 'Contract',
+                    salary: '₹32k - 40k',
+                    applicants: 12,
+                    theme: theme,
+                    isUrgent: false,
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Documents Section
+                  _SectionHeader(title: 'Verified Documents', theme: theme),
+                  const SizedBox(height: 12),
+                  _DocCard(title: 'GST Registration', theme: theme),
+                  _DocCard(title: 'Business License', theme: theme),
+                  
+                  const SizedBox(height: 48),
                 ],
               ),
             ),
-          ),
+          ],
         ),
-      ],
+      ),
     );
   }
+}
 
-  Widget _buildStatisticsCards(ThemeData theme) {
-    return Row(
-      children: [
-        Expanded(child: _buildStatCard('ACTIVE POSTS', '12', theme)),
-        const SizedBox(width: 12),
-        Expanded(child: _buildStatCard('WORKERS HIRED', '45', theme)),
-      ],
+class _SectionHeader extends StatelessWidget {
+  final String title;
+  final ThemeData theme;
+
+  const _SectionHeader({required this.title, required this.theme});
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Text(
+        title,
+        style: TextStyle(
+          color: theme.colorScheme.onSurface,
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+          letterSpacing: -0.5,
+        ),
+      ),
     );
   }
+}
 
-  Widget _buildStatCard(String title, String value, ThemeData theme) {
+class _StatCard extends StatelessWidget {
+  final String value;
+  final String label;
+  final ThemeData theme;
+  final Color valueColor;
+
+  const _StatCard({required this.value, required this.label, required this.theme, required this.valueColor});
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+      padding: const EdgeInsets.symmetric(vertical: 24),
       decoration: BoxDecoration(
         color: theme.cardColor,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: theme.dividerColor.withOpacity(0.05)),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 10, letterSpacing: 1.0, fontWeight: FontWeight.w600)),
-          const SizedBox(height: 12),
-          Text(value, style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 24, fontWeight: FontWeight.bold)),
+          Text(value, style: TextStyle(color: valueColor, fontSize: 32, fontWeight: FontWeight.w900)),
+          const SizedBox(height: 4),
+          Text(label, style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 10, letterSpacing: 1.2, fontWeight: FontWeight.w800)),
         ],
       ),
     );
   }
+}
 
-  Widget _buildAboutSection(EmployerProfile? employer, ThemeData theme) {
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text('About', style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 18, fontWeight: FontWeight.bold)),
-            TextButton(
-              onPressed: () {},
-              child: const Text('View Portfolio', style: TextStyle(color: Colors.blueAccent, fontWeight: FontWeight.w600)),
-            )
-          ],
-        ),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-             color: theme.cardColor,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Text(
-            '${(employer?.name != null && employer!.name.isNotEmpty) ? employer.name : "Rajesh Construction"} has been a cornerstone of urban development in Western India for over 15 years. Specialized in large-scale residential complexes and industrial infrastructure, we pride ourselves on precision engineering and fostering a skilled workforce environment. Our current portfolio includes the Metro-Link bridge expansion and the Sapphire Towers project.',
-            style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 14, height: 1.6),
-          ),
-        ),
-      ],
-    );
-  }
+class _JobCard extends StatelessWidget {
+  final String title;
+  final String type;
+  final String salary;
+  final int applicants;
+  final ThemeData theme;
+  final bool isUrgent;
 
-  Widget _buildActiveJobsSection(ThemeData theme) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text('Active Jobs', style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 18, fontWeight: FontWeight.bold)),
-            GestureDetector(
-              onTap: () {},
-              child: Row(
-                children: [
-                  Text('See All', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 13, fontWeight: FontWeight.w600)),
-                  const SizedBox(width: 4),
-                  Icon(Icons.arrow_forward_ios, color: theme.colorScheme.onSurfaceVariant, size: 12),
-                ],
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        _buildJobCard(
-          title: 'Master Carpenter',
-          badgeText: 'URGENT',
-          badgeColor: const Color(0xFFD97706), // Orange
-          type: 'Full-time',
-          salary: '₹28k - 35k',
-          applicants: 42,
-          avatarOffset: true,
-          theme: theme,
-        ),
-        _buildJobCard(
-          title: 'Industrial Electrician',
-          badgeText: 'HIRING',
-          badgeColor: const Color(0xFF10B981), // Green
-          type: 'Contract',
-          salary: '₹32k - 40k',
-          applicants: 12,
-          avatarOffset: false,
-          theme: theme,
-        ),
-      ],
-    );
-  }
+  const _JobCard({required this.title, required this.type, required this.salary, required this.applicants, required this.theme, required this.isUrgent});
 
-  Widget _buildJobCard({
-    required String title,
-    required String badgeText,
-    required Color badgeColor,
-    required String type,
-    required String salary,
-    required int applicants,
-    required bool avatarOffset,
-    required ThemeData theme,
-  }) {
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(20),
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: theme.cardColor,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: theme.dividerColor.withOpacity(0.05)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Text(title, style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 16, fontWeight: FontWeight.bold)),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: badgeColor.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(12),
+              if (isUrgent)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Text('URGENT', style: TextStyle(color: Colors.orange, fontSize: 9, fontWeight: FontWeight.w900)),
                 ),
-                child: Text(badgeText, style: TextStyle(color: badgeColor, fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
-              ),
             ],
           ),
           const SizedBox(height: 12),
           Row(
             children: [
-              Icon(Icons.schedule, color: theme.colorScheme.onSurfaceVariant, size: 14),
-              const SizedBox(width: 4),
+              Icon(Icons.work_history_outlined, color: theme.colorScheme.onSurfaceVariant, size: 14),
+              const SizedBox(width: 6),
               Text(type, style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 13)),
               const SizedBox(width: 16),
-              Icon(Icons.payments_outlined, color: theme.colorScheme.onSurfaceVariant, size: 14),
+              Icon(Icons.currency_rupee_rounded, color: theme.colorScheme.onSurfaceVariant, size: 14),
               const SizedBox(width: 4),
               Text(salary, style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 13)),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              SizedBox(
-                width: 80,
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    const CircleAvatar(
-                      radius: 12,
-                      backgroundColor: Colors.blue,
-                      backgroundImage: NetworkImage('https://i.pravatar.cc/100?img=11'),
-                    ),
-                    if (avatarOffset)
-                      const Positioned(
-                        left: 16,
-                        child: CircleAvatar(
-                          radius: 12,
-                          backgroundColor: Colors.blueAccent,
-                          backgroundImage: NetworkImage('https://i.pravatar.cc/100?img=12'),
-                        ),
-                      ),
-                    Positioned(
-                      left: avatarOffset ? 32 : 16,
-                      child: CircleAvatar(
-                        radius: 12,
-                        backgroundColor: theme.colorScheme.outline,
-                        child: const Text('+8', style: TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold)),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Text('$applicants Applicants', style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 12, fontWeight: FontWeight.w600)),
+              Text('$applicants Applicants', style: TextStyle(color: theme.colorScheme.primary, fontSize: 12, fontWeight: FontWeight.bold)),
+              Icon(Icons.arrow_forward_rounded, color: theme.colorScheme.onSurfaceVariant, size: 18),
             ],
-          )
+          ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildDocumentsSection(ThemeData theme) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Documents', style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 18, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 16),
-        _buildDocCard('GST Registration', 'Last verified: Oct 2023', theme),
-        _buildDocCard('Business License', 'Valid until Dec 2025', theme),
-      ],
-    );
-  }
+class _DocCard extends StatelessWidget {
+  final String title;
+  final ThemeData theme;
 
-  Widget _buildDocCard(String title, String subtitle, ThemeData theme) {
+  const _DocCard({required this.title, required this.theme});
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
         color: theme.cardColor,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
       ),
       child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-               color: theme.scaffoldBackgroundColor,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(Icons.description, color: theme.colorScheme.primary, size: 24),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 15)),
-                const SizedBox(height: 4),
-                Text(subtitle, style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12)),
-              ],
-            ),
-          ),
-          const Icon(Icons.check_circle, color: Color(0xFF10B981), size: 22),
+          Icon(Icons.verified_user_rounded, color: theme.colorScheme.secondary, size: 20),
+          const SizedBox(width: 12),
+          Text(title, style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 14, fontWeight: FontWeight.w600)),
+          const Spacer(),
+          Icon(Icons.check_circle_rounded, color: Colors.green.shade400, size: 18),
         ],
       ),
     );

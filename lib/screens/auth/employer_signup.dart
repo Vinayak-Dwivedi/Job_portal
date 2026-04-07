@@ -61,7 +61,7 @@ class _EmployerSignupScreenState extends State<EmployerSignupScreen> {
         const SizedBox(width: 10),
         Text(
           text,
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 16),
         ),
       ],
     );
@@ -175,9 +175,9 @@ class _EmployerSignupScreenState extends State<EmployerSignupScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           "Company Identity",
-                          style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                          style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 18, fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 4),
                         const Text(
@@ -228,12 +228,12 @@ class _EmployerSignupScreenState extends State<EmployerSignupScreen> {
                 hint: "98765 43210",
                 controller: _phoneController,
                 keyboardType: TextInputType.phone,
-                prefixWidget: const Padding(
+                prefixWidget: Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text("+91", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
+                      Text("+91", style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 15)),
                     ],
                   ),
                 ),
@@ -274,13 +274,13 @@ class _EmployerSignupScreenState extends State<EmployerSignupScreen> {
                     value: _selectedIndustry,
                     isExpanded: true,
                     dropdownColor: theme.cardColor,
-                    icon: Icon(Icons.keyboard_arrow_down, color: theme.colorScheme.onSurfaceVariant),
-                    style: const TextStyle(color: Colors.white, fontSize: 15),
+                    icon: Icon(Icons.keyboard_arrow_down_rounded, color: theme.colorScheme.primary),
+                    style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 15, fontWeight: FontWeight.w500),
                     items: ['Select Industry', 'Civil Construction', 'IT & Software', 'Manufacturing', 'Retail']
                         .map((String value) {
                       return DropdownMenuItem<String>(
                         value: value,
-                        child: Text(value),
+                        child: Text(value, style: TextStyle(color: theme.colorScheme.onSurface)),
                       );
                     }).toList(),
                     onChanged: (val) {

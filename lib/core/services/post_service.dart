@@ -5,7 +5,16 @@ import 'package:flutter/foundation.dart';
 
 class PostService {
   static final _firestore = FirebaseFirestore.instance;
-  static final _storage = FirebaseStorage.instance;
+  static final _storage = _storageInstance();
+
+  static FirebaseStorage _storageInstance() {
+    try {
+      return FirebaseStorage.instance;
+    } catch (e) {
+      // Fallback for environments where storage might not be initialized correctly
+      return FirebaseStorage.instance;
+    }
+  }
 
   // 🔥 Upload Image
   static Future<String> uploadImage(File file) async {
@@ -71,5 +80,67 @@ class PostService {
       debugPrint("Error fetching post: $e");
       return null;
     }
+  }
+
+  // 🔥 Social Interactions
+  static Future<void> toggleLike(String postId, String uid) async {
+    final postRef = _firestore.collection('posts').doc(postId);
+    final likeRef = postRef.collection('likes').doc(uid);
+
+    return _firestore.runTransaction((transaction) async {
+      final postDoc = await transaction.get(postRef);
+      if (!postDoc.exists) return;
+
+      final likeDoc = await transaction.get(likeRef);
+
+      if (likeDoc.exists) {
+        transaction.delete(likeRef);
+        transaction.update(postRef, {'likes': FieldValue.increment(-1)});
+      } else {
+        transaction.set(likeRef, {
+          'uid': uid,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+        transaction.update(postRef, {'likes': FieldValue.increment(1)});
+      }
+    });
+  }
+
+  static Future<void> addComment(String postId, Map<String, dynamic> commentData) async {
+    final postRef = _firestore.collection('posts').doc(postId);
+    final commentRef = postRef.collection('comments').doc();
+
+    return _firestore.runTransaction((transaction) async {
+      transaction.set(commentRef, {
+        ...commentData,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+      transaction.update(postRef, {'comments': FieldValue.increment(1)});
+    });
+  }
+
+  static Stream<List<Map<String, dynamic>>> getComments(String postId) {
+    return _firestore
+        .collection('posts')
+        .doc(postId)
+        .collection('comments')
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map((doc) {
+              final data = doc.data();
+              data['id'] = doc.id;
+              return data;
+            }).toList());
+  }
+
+  static Stream<bool> isPostLiked(String postId, String uid) {
+    if (uid.isEmpty) return Stream.value(false);
+    return _firestore
+        .collection('posts')
+        .doc(postId)
+        .collection('likes')
+        .doc(uid)
+        .snapshots()
+        .map((doc) => doc.exists);
   }
 }

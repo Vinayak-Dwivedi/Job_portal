@@ -11,12 +11,12 @@ class WorkerModel {
   final List<String> jobTitles;
   final List<String> skills;
   final int experience;
-  
-  // From user collection
   final bool isVerified;
   final String phone;
   final String? email;
   final int credits;
+  final double rating;
+  final int reviewCount;
 
   WorkerModel({
     required this.uid,
@@ -33,6 +33,8 @@ class WorkerModel {
     required this.phone,
     this.email = '',
     this.credits = 0,
+    this.rating = 0.0,
+    this.reviewCount = 0,
   });
 
   WorkerModel copyWith({
@@ -50,6 +52,8 @@ class WorkerModel {
     String? email,
     int? credits,
     int? experience,
+    double? rating,
+    int? reviewCount,
   }) {
     return WorkerModel(
       uid: uid ?? this.uid,
@@ -66,6 +70,8 @@ class WorkerModel {
       phone: phone ?? this.phone,
       email: email ?? this.email,
       credits: credits ?? this.credits,
+      rating: rating ?? this.rating,
+      reviewCount: reviewCount ?? this.reviewCount,
     );
   }
 
@@ -83,6 +89,8 @@ class WorkerModel {
       'phone': phone,
       'email': email,
       'credits': credits,
+      'rating': rating,
+      'reviewCount': reviewCount,
     };
   }
 
@@ -101,6 +109,8 @@ class WorkerModel {
       phone: map['phone'] ?? '',
       email: map['email'],
       credits: map['credits'] ?? 0,
+      rating: double.tryParse(map['rating']?.toString() ?? '0.0') ?? 0.0,
+      reviewCount: map['reviewCount'] ?? 0,
     );
   }
 }

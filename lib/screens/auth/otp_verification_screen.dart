@@ -128,21 +128,22 @@ void _verifyOtp() async {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final defaultPinTheme = PinTheme(
       width: 64,
       height: 72,
-      textStyle: const TextStyle(
+      textStyle: TextStyle(
         fontSize: 28,
-        color: Color(0xFFE5E7EB), // Light gray text
+        color: theme.colorScheme.onSurface,
         fontWeight: FontWeight.bold,
       ),
       decoration: BoxDecoration(
-        color: const Color(0xFF0F172A), // Dark surface
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF1E293B), width: 1.5),
+        border: Border.all(color: theme.dividerColor, width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.3),
+            color: Colors.black.withOpacity(theme.brightness == Brightness.dark ? 0.3 : 0.05),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -152,10 +153,10 @@ void _verifyOtp() async {
 
     final focusedPinTheme = defaultPinTheme.copyWith(
       decoration: defaultPinTheme.decoration!.copyWith(
-        border: Border.all(color: const Color(0xFF2563EB), width: 2), // Electric blue highlight
+        border: Border.all(color: theme.colorScheme.primary, width: 2), // Branding blue highlight
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF2563EB).withOpacity(0.35), // Soft glow
+            color: theme.colorScheme.primary.withOpacity(0.35), // Soft glow
             blurRadius: 16,
             spreadRadius: 2,
           ),
@@ -169,13 +170,13 @@ void _verifyOtp() async {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFFE5E7EB)),
+          icon: Icon(Icons.arrow_back, color: theme.colorScheme.onSurface),
           onPressed: () => context.pop(),
         ),
-        title: const Text(
+        title: Text(
           'Security Check',
           style: TextStyle(
-            color: Color(0xFFE5E7EB),
+            color: theme.colorScheme.onSurface.withOpacity(0.8),
             fontSize: 16,
             fontWeight: FontWeight.w600,
             letterSpacing: 0.5,
@@ -183,45 +184,38 @@ void _verifyOtp() async {
         ),
       ),
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF0B1A33), Color(0xFF0F2747)], // Dark navy gradient
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
+        color: theme.scaffoldBackgroundColor,
         child: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Headings
-                const Text(
+                Text(
                   'Verify Your',
                   style: TextStyle(
                     fontSize: 36,
                     fontWeight: FontWeight.w900,
-                    color: Color(0xFFE5E7EB),
+                    color: theme.colorScheme.onSurface,
                     height: 1.1,
                   ),
                 ).animate().fadeIn(duration: 500.ms).moveY(begin: 10, end: 0),
-                const Text(
+                Text(
                   'Identity',
                   style: TextStyle(
                     fontSize: 36,
                     fontWeight: FontWeight.w900,
-                    color: Color(0xFF2563EB), // Electric blue
+                    color: theme.colorScheme.primary, // Themed primary color
                     height: 1.1,
                   ),
                 ).animate().fadeIn(delay: 200.ms).moveY(begin: 10, end: 0)
                  .shimmer(duration: 2.seconds, delay: 1.seconds),
                 const SizedBox(height: 16),
-                const Text(
+                Text(
                   "We've sent a secure code to your device. Enter the digits below to authenticate.",
                   style: TextStyle(
                     fontSize: 15,
-                    color: Color(0xFF94A3B8), // Muted secondary
+                    color: theme.colorScheme.onSurfaceVariant, // Use themed secondary
                     height: 1.5,
                   ),
                 ).animate().fadeIn(delay: 300.ms),
@@ -268,44 +262,44 @@ void _verifyOtp() async {
                                 height: 70,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: const Color(0xFF2563EB).withOpacity(0.15),
+                                  color: theme.colorScheme.primary.withOpacity(0.15),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: const Color(0xFF2563EB).withOpacity(0.2),
+                                      color: theme.colorScheme.primary.withOpacity(0.2),
                                       blurRadius: 20,
                                       spreadRadius: 5,
                                     ),
                                   ],
                                 ),
                               ),
-                              const SizedBox(
+                              SizedBox(
                                 width: 60,
                                 height: 60,
                                 child: CircularProgressIndicator(
-                                  color: Color(0xFF2563EB),
+                                  color: theme.colorScheme.primary,
                                   strokeWidth: 3,
                                 ),
                               ),
                               Container(
                                 width: 44,
                                 height: 44,
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFF0F172A),
+                                decoration: BoxDecoration(
+                                  color: theme.cardColor,
                                   shape: BoxShape.circle,
                                 ),
-                                child: const Icon(Icons.fingerprint, color: Color(0xFF2563EB), size: 24),
+                                child: Icon(Icons.fingerprint, color: theme.colorScheme.primary, size: 24),
                               ),
                             ],
                           ),
                         ),
                         const SizedBox(height: 16),
-                        const Text(
+                        Text(
                           'AUTHORIZING...',
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
                             letterSpacing: 2.0,
-                            color: Color(0xFFE5E7EB),
+                            color: theme.colorScheme.onSurface.withOpacity(0.7),
                           ),
                         ),
                       ],
@@ -322,14 +316,14 @@ void _verifyOtp() async {
                   child: ElevatedButton(
                     onPressed: _isVerifying ? null : _verifyOtp,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2563EB), // Electric blue
+                      backgroundColor: theme.colorScheme.primary,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 20),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
                       elevation: 8,
-                      shadowColor: const Color(0xFF2563EB).withOpacity(0.4),
+                      shadowColor: theme.colorScheme.primary.withOpacity(0.4),
                     ),
                     child: const Text('Verify Code', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
                   ).animate().fadeIn(delay: 700.ms).moveY(begin: 10, end: 0),
@@ -358,16 +352,15 @@ void _verifyOtp() async {
                 ),
                 const SizedBox(height: 32),
 
-                // Secure Verification Banner
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF0F172A), // Dark surface
+                    color: theme.cardColor,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFF1E293B)),
+                    border: Border.all(color: theme.dividerColor),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
+                        color: Colors.black.withOpacity(theme.brightness == Brightness.dark ? 0.2 : 0.05),
                         blurRadius: 12,
                         offset: const Offset(0, 4),
                       ),
@@ -379,29 +372,29 @@ void _verifyOtp() async {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF2563EB).withOpacity(0.15),
+                          color: theme.colorScheme.primary.withOpacity(0.15),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(Icons.shield_outlined, color: Color(0xFF2563EB), size: 22),
+                        child: Icon(Icons.shield_outlined, color: theme.colorScheme.primary, size: 22),
                       ),
                       const SizedBox(width: 16),
-                      const Expanded(
+                      Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               'Secure Verification',
                               style: TextStyle(
-                                color: Color(0xFFE5E7EB),
+                                color: theme.colorScheme.onSurface,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 14,
                               ),
                             ),
-                            SizedBox(height: 6),
+                            const SizedBox(height: 6),
                             Text(
                               'Protecting your professional data is our top priority. Two-factor authentication keeps your profile safe.',
                               style: TextStyle(
-                                color: Color(0xFF94A3B8),
+                                color: theme.colorScheme.onSurfaceVariant,
                                 fontSize: 12,
                                 height: 1.5,
                               ),

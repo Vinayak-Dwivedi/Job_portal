@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../core/theme/app_colors.dart';
-import '../../widgets/common/ki_bottom_nav_bar.dart'; // Just in case it's needed, but actually this screen should just use the theme.
 
 class PrimaryButton extends StatelessWidget {
   final String label;
@@ -318,6 +317,14 @@ Future<void> fetchSkills() async {
                 decoration: BoxDecoration(
                   color: theme.cardColor,
                   borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: theme.dividerColor, width: 1.2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(theme.brightness == Brightness.dark ? 0.2 : 0.05),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
                 child: DropdownButtonHideUnderline(
                   child: _isLoading
@@ -334,9 +341,9 @@ Future<void> fetchSkills() async {
                       : DropdownButton<String>(
                           value: _selectedSkill.isEmpty ? null : _selectedSkill,
                           isExpanded: true,
-                          dropdownColor: AppColors.surface,
-                          iconEnabledColor: Colors.grey,
-                          style: const TextStyle(color: Colors.white, fontSize: 15),
+                          dropdownColor: theme.cardColor,
+                          iconEnabledColor: theme.colorScheme.onSurfaceVariant,
+                          style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 15, fontWeight: FontWeight.w500),
                           items: _skills.map((skill) {
                             return DropdownMenuItem(
                               value: skill,
@@ -498,12 +505,12 @@ class _ProfilePhotoCard extends StatelessWidget {
                 height: 72,
                 decoration: BoxDecoration(
                   border: Border.all(
-                      color: Colors.grey.withOpacity(0.3), width: 1.5),
+                      color: Theme.of(context).dividerColor, width: 1.5),
                   borderRadius: BorderRadius.circular(14),
-                  color: const Color(0xFF0F172A),
+                  color: Theme.of(context).scaffoldBackgroundColor,
                 ),
-                child: const Icon(Icons.camera_alt_outlined,
-                    color: Colors.white54, size: 28),
+                child: Icon(Icons.camera_alt_outlined,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant, size: 28),
               ),
               Positioned(
                 bottom: 0,
@@ -512,9 +519,9 @@ class _ProfilePhotoCard extends StatelessWidget {
                   width: 22,
                   height: 22,
                   decoration: BoxDecoration(
-                    color: AppColors.primary,
+                    color: Theme.of(context).colorScheme.primary,
                     shape: BoxShape.circle,
-                    border: Border.all(color: AppColors.surface, width: 2),
+                    border: Border.all(color: Theme.of(context).cardColor, width: 2),
                   ),
                   child: const Icon(Icons.edit, color: Colors.white, size: 11),
                 ),
@@ -566,7 +573,7 @@ class _StepperButton extends StatelessWidget {
           color: filled ? Theme.of(context).colorScheme.primary : Theme.of(context).scaffoldBackgroundColor,
           borderRadius: BorderRadius.circular(10),
         ),
-        child: Icon(icon, color: Colors.white, size: 20),
+        child: Icon(icon, color: filled ? Colors.white : Theme.of(context).colorScheme.onSurface, size: 20),
       ),
     );
   }
@@ -581,12 +588,13 @@ class _MapCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return GestureDetector(
       onTap: onTap,
       child: Container(
         height: 130,
         decoration: BoxDecoration(
-          color: Theme.of(context).cardColor,
+          color: theme.cardColor,
           borderRadius: BorderRadius.circular(14),
         ),
         clipBehavior: Clip.antiAlias,
@@ -595,18 +603,18 @@ class _MapCard extends StatelessWidget {
             // Map placeholder grid pattern
             CustomPaint(
               size: const Size(double.infinity, 130),
-              painter: _MapGridPainter(),
+              painter: _MapGridPainter(theme.colorScheme.onSurface.withOpacity(0.03)),
             ),
             // Pin icons
-            const Positioned(
+            Positioned(
               top: 28,
               left: 90,
-              child: Icon(Icons.location_on, color: Colors.white38, size: 22),
+              child: Icon(Icons.location_on, color: theme.colorScheme.onSurface.withOpacity(0.1), size: 22),
             ),
-            const Positioned(
+            Positioned(
               top: 55,
               left: 40,
-              child: Icon(Icons.location_on, color: Colors.white24, size: 18),
+              child: Icon(Icons.location_on, color: theme.colorScheme.onSurface.withOpacity(0.05), size: 18),
             ),
             // Location detect button
             Positioned(
@@ -631,18 +639,19 @@ class _MapCard extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E293B).withOpacity(0.95),
+                  color: theme.scaffoldBackgroundColor.withOpacity(0.95),
                   borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: theme.dividerColor, width: 0.5),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.location_on,
-                        color: Color(0xFF2563EB), size: 14),
+                    Icon(Icons.location_on,
+                        color: theme.colorScheme.primary, size: 14),
                     const SizedBox(width: 5),
                     Text(label,
-                        style: const TextStyle(
-                            color: Colors.white,
+                        style: TextStyle(
+                            color: theme.colorScheme.onSurface,
                             fontSize: 12,
                             fontWeight: FontWeight.w500)),
                   ],
@@ -658,10 +667,13 @@ class _MapCard extends StatelessWidget {
 
 // Grid painter for map placeholder
 class _MapGridPainter extends CustomPainter {
+  final Color gridColor;
+  _MapGridPainter(this.gridColor);
+
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.white.withOpacity(0.04)
+      ..color = gridColor
       ..strokeWidth = 1;
     const step = 24.0;
     for (double x = 0; x < size.width; x += step) {

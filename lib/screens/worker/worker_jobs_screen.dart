@@ -28,19 +28,27 @@ class _WorkerJobsScreenState extends ConsumerState<WorkerJobsScreen>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final worker = ref.watch(workerProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0F1A), // Deep dark background
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: Column(
         children: [
           // ── Premium App Bar ──────────────────────────────
           Container(
             padding: const EdgeInsets.fromLTRB(20, 60, 20, 24),
-            decoration: const BoxDecoration(
-              color: Color(0xFF0F172A),
-              borderRadius: BorderRadius.only(bottomLeft: Radius.circular(32), bottomRight: Radius.circular(32)),
-              border: Border(bottom: BorderSide(color: Color(0xFF1E293B))),
+            decoration: BoxDecoration(
+              color: theme.cardColor,
+              borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(32), bottomRight: Radius.circular(32)),
+              border: Border(bottom: BorderSide(color: theme.dividerColor)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(theme.brightness == Brightness.dark ? 0.3 : 0.05),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                ),
+              ],
             ),
             child: Column(
               children: [
@@ -72,18 +80,20 @@ class _WorkerJobsScreenState extends ConsumerState<WorkerJobsScreen>
                 Container(
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1E293B), // Dark surface for tab bar
+                    color: theme.brightness == Brightness.dark 
+                        ? theme.colorScheme.surfaceContainerHighest 
+                        : theme.colorScheme.surfaceContainerLowest, 
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: TabBar(
                     controller: _tabController,
                     labelColor: Colors.white,
-                    unselectedLabelColor: const Color(0xFF94A3B8),
+                    unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
                     indicator: BoxDecoration(
-                      color: const Color(0xFF2563EB), // Electric blue
+                      color: theme.colorScheme.primary,
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
-                        BoxShadow(color: const Color(0xFF2563EB).withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))
+                        BoxShadow(color: theme.colorScheme.primary.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))
                       ],
                     ),
                     indicatorSize: TabBarIndicatorSize.tab,
@@ -120,7 +130,7 @@ class _WorkerJobsScreenState extends ConsumerState<WorkerJobsScreen>
         _SuccessRateCard().animate().fadeIn(delay: 200.ms).slideY(begin: 0.1, end: 0),
         const SizedBox(height: 24),
         
-        const Text('RECENT APPLICATIONS', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1.2)),
+        Text('RECENT APPLICATIONS', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1.2)),
         const SizedBox(height: 16),
         
         const _JobCard(
@@ -167,11 +177,11 @@ class _WorkerJobsScreenState extends ConsumerState<WorkerJobsScreen>
         children: [
           Container(
             padding: const EdgeInsets.all(24),
-            decoration: const BoxDecoration(color: Color(0xFF151C2B), shape: BoxShape.circle),
-            child: Icon(icon, color: const Color(0xFF475569), size: 48),
+            decoration: BoxDecoration(color: Theme.of(context).cardColor, shape: BoxShape.circle),
+            child: Icon(icon, color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.5), size: 48),
           ),
           const SizedBox(height: 20),
-          Text(message, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 16, fontWeight: FontWeight.w600)),
+          Text(message, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 16, fontWeight: FontWeight.w600)),
         ],
       ),
     ).animate().fadeIn();
@@ -196,14 +206,19 @@ class _JobCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFF151C2B), // Dark surface
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFF1E293B)),
+        border: Border.all(color: theme.dividerColor),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 10, offset: const Offset(0, 4))
+          BoxShadow(
+            color: Colors.black.withOpacity(theme.brightness == Brightness.dark ? 0.2 : 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          )
         ],
       ),
       child: Column(
@@ -221,8 +236,8 @@ class _JobCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title, style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: isRejected ? const Color(0xFF94A3B8) : const Color(0xFFE5E7EB))),
-                    Text(company, style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13, fontWeight: FontWeight.w500)),
+                    Text(title, style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: isRejected ? theme.colorScheme.onSurfaceVariant : theme.colorScheme.onSurface)),
+                    Text(company, style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 13, fontWeight: FontWeight.w500)),
                   ],
                 ),
               ),
@@ -235,19 +250,19 @@ class _JobCard extends StatelessWidget {
                     child: Text(status.toUpperCase(), style: TextStyle(color: statusColor, fontSize: 9, fontWeight: FontWeight.w900)),
                   ),
                   const SizedBox(height: 4),
-                  Text(time, style: const TextStyle(color: Color(0xFF64748B), fontSize: 10, fontWeight: FontWeight.w600)),
+                  Text(time, style: TextStyle(color: theme.colorScheme.onSurfaceVariant.withOpacity(0.6), fontSize: 10, fontWeight: FontWeight.w600)),
                 ],
               ),
             ],
           ),
           if (isRejected) ...[
-            const Padding(
-              padding: EdgeInsets.only(top: 16.0),
-              child: Divider(color: Color(0xFF1E293B)),
+            Padding(
+              padding: const EdgeInsets.only(top: 16.0),
+              child: Divider(color: theme.dividerColor),
             ),
-            const Text(
+            Text(
               'Position filled. Keep applying to stay on top!',
-              style: TextStyle(color: Color(0xFF64748B), fontSize: 11, fontWeight: FontWeight.w500),
+              style: TextStyle(color: theme.colorScheme.onSurfaceVariant.withOpacity(0.8), fontSize: 11, fontWeight: FontWeight.w500),
             ),
           ],
           const SizedBox(height: 16),
@@ -256,11 +271,11 @@ class _JobCard extends StatelessWidget {
             child: OutlinedButton(
               onPressed: () {},
               style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: Color(0xFF334155)),
+                side: BorderSide(color: theme.dividerColor),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 padding: const EdgeInsets.symmetric(vertical: 12),
               ),
-              child: const Text('View Status Details', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: Color(0xFFE5E7EB))),
+              child: Text('View Status Details', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: theme.colorScheme.onSurface)),
             ),
           ),
         ],
@@ -272,17 +287,18 @@ class _JobCard extends StatelessWidget {
 class _SuccessRateCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)], // Vibrant app primary gradient
+        gradient: LinearGradient(
+          colors: [theme.colorScheme.primary, theme.colorScheme.primary.withOpacity(0.8)], 
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
-          BoxShadow(color: const Color(0xFF2563EB).withOpacity(0.3), blurRadius: 20, offset: const Offset(0, 10))
+          BoxShadow(color: theme.colorScheme.primary.withOpacity(0.3), blurRadius: 20, offset: const Offset(0, 10))
         ],
       ),
       child: Stack(

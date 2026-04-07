@@ -1,52 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../models/employer_model.dart';
 
-class EmployerProfile {
-  final String uid;
-  final String contactName;
-  final String companyName;
-  final String phone;
-  final String? profilePhotoUrl;
-  final String location;
-  final bool isVerified;
-
-  EmployerProfile({
-    required this.uid,
-    this.contactName = '',   // ✅ FIX
-    this.companyName = '',   // ✅ FIX
-    this.phone = '',         // ✅ FIX
-    this.location = '',
-    this.profilePhotoUrl,
-    this.isVerified = false,
-  });
-
-
-  String get name => companyName.isNotEmpty ? companyName : contactName;
-
-  EmployerProfile copyWith({
-    String? uid,
-    String? contactName,
-    String? companyName,
-    String? phone,
-    String? location,
-    String? profilePhotoUrl,
-    bool? isVerified,
-  }) {
-    return EmployerProfile(
-      uid: uid ?? this.uid,
-      contactName: contactName ?? this.contactName,
-      companyName: companyName ?? this.companyName,
-      phone: phone ?? this.phone,
-      location: location ?? this.location,
-      profilePhotoUrl: profilePhotoUrl ?? this.profilePhotoUrl,
-      isVerified: isVerified ?? this.isVerified,
-    );
-  }
-}
-
-class EmployerNotifier extends Notifier<EmployerProfile?> {
+class EmployerNotifier extends Notifier<EmployerModel?> {
   @override
-  EmployerProfile? build() {
+  EmployerModel? build() {
     return null;
   }
 
@@ -56,12 +14,14 @@ class EmployerNotifier extends Notifier<EmployerProfile?> {
     required String companyName,
     required String phone,
   }) {
-    state = EmployerProfile(
+    state = EmployerModel(
       uid: uid,
-      contactName: contactName,
+      contactPersonName: contactName,
       companyName: companyName,
       phone: phone,
       isVerified: true,
+      businessType: '',
+      officeAddress: '',
     );
   }
 
@@ -71,23 +31,17 @@ class EmployerNotifier extends Notifier<EmployerProfile?> {
       if (doc.exists && doc.data() != null) {
         final data = doc.data()!;
         print("🔥 DATA FROM FIRESTORE: $data");
-        state = EmployerProfile(
-          uid: uid,
-          contactName: (data['name'] ?? '').toString(),
-          companyName: (data['companyName'] ?? data['company'] ?? '').toString(),
-          phone: (data['phone'] ?? '').toString(),
-          location: data['location'] is Map ? (data['location']['address'] ?? '').toString() : (data['location'] ?? '').toString(),
-          profilePhotoUrl: (data['profilePhotoUrl'] ?? data['logoUrl'] ?? '').toString(),
-          isVerified: true,
-        );
+        state = EmployerModel.fromMap(data, uid);
       } else {
         // 🆕 Handle new employer WITHOUT a document (fallback)
         print("ℹ️ Employer Profile document not found, initializing basic state");
-        state = EmployerProfile(
+        state = EmployerModel(
           uid: uid,
-          contactName: 'Employer',
+          contactPersonName: 'Employer',
           companyName: 'Company Name',
           phone: '',
+          businessType: '',
+          officeAddress: '',
           isVerified: true,
         );
       }
@@ -97,4 +51,4 @@ class EmployerNotifier extends Notifier<EmployerProfile?> {
   }
 }
 
-final employerProvider = NotifierProvider<EmployerNotifier, EmployerProfile?>(() => EmployerNotifier());
+final employerProvider = NotifierProvider<EmployerNotifier, EmployerModel?>(() => EmployerNotifier());

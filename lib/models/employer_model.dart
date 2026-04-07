@@ -15,6 +15,9 @@ class EmployerModel {
   final String? govtIdUrl;
   final bool isVerified;
   final int credits;
+  final String bio;
+  final double rating;
+  final int reviewCount;
 
   EmployerModel({
     required this.uid,
@@ -31,7 +34,14 @@ class EmployerModel {
     this.govtIdUrl,
     this.isVerified = false,
     this.credits = 0,
+    this.rating = 0.0,
+    this.reviewCount = 0,
+    this.bio = '',
   });
+
+  String get name => companyName.isNotEmpty ? companyName : contactPersonName;
+  String? get profilePhotoUrl => logoUrl;
+  String get contactName => contactPersonName;
 
   Map<String, dynamic> toMap() {
     return {
@@ -48,6 +58,9 @@ class EmployerModel {
       'govtIdUrl': govtIdUrl,
       'isVerified': isVerified,
       'credits': credits,
+      'bio': bio,
+      'rating': rating,
+      'reviewCount': reviewCount,
     };
   }
 
@@ -67,6 +80,9 @@ class EmployerModel {
       govtIdUrl: map['govtIdUrl'],
       isVerified: map['isVerified'] ?? false,
       credits: map['credits'] ?? 0,
+      bio: map['bio'] ?? '',
+      rating: double.tryParse(map['rating']?.toString() ?? '0.0') ?? 0.0,
+      reviewCount: map['reviewCount'] ?? 0,
     );
   }
 }
