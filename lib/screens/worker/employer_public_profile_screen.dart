@@ -18,8 +18,9 @@ class EmployerPublicProfileScreen extends StatelessWidget {
       builder: (context, snapshot) {
 
         if (!snapshot.hasData) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
+          return Scaffold(
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+            body: const Center(child: CircularProgressIndicator()),
           );
         }
 
@@ -33,17 +34,18 @@ class EmployerPublicProfileScreen extends StatelessWidget {
         final displayName =
             employerName.isNotEmpty ? employerName : contactName;
 
-        final employerLogoColor = const Color(0xFF1D4ED8);
+        final theme = Theme.of(context);
+        final employerLogoColor = theme.colorScheme.primary;
 
         return Scaffold(
-          backgroundColor: const Color(0xFFF8FAFC),
+          backgroundColor: theme.scaffoldBackgroundColor,
           body: CustomScrollView(
             slivers: [
               // ── HEADER ──
               SliverAppBar(
                 expandedHeight: 200,
                 pinned: true,
-                backgroundColor: const Color(0xFF1D4ED8),
+                backgroundColor: theme.colorScheme.primary,
                 leading: IconButton(
                   icon: const Icon(Icons.arrow_back_ios_new_rounded,
                       color: Colors.white),
@@ -54,11 +56,11 @@ class EmployerPublicProfileScreen extends StatelessWidget {
                   background: Stack(
                     children: [
                       Container(
-                        decoration: const BoxDecoration(
+                        decoration: BoxDecoration(
                           gradient: LinearGradient(
                             colors: [
-                              Color(0xFF1D4ED8),
-                              Color(0xFF1E40AF)
+                              theme.colorScheme.primary,
+                              theme.colorScheme.primary.withOpacity(0.8),
                             ],
                           ),
                         ),
@@ -70,8 +72,8 @@ class EmployerPublicProfileScreen extends StatelessWidget {
                           offset: const Offset(0, 40),
                           child: Container(
                             padding: const EdgeInsets.all(4),
-                            decoration: const BoxDecoration(
-                                color: Colors.white,
+                            decoration: BoxDecoration(
+                                color: theme.scaffoldBackgroundColor,
                                 shape: BoxShape.circle),
                             child: CircleAvatar(
                               radius: 50,
@@ -110,15 +112,15 @@ class EmployerPublicProfileScreen extends StatelessWidget {
 
                       Text(
                         "Phone: $phone",
-                        style: const TextStyle(
-                          color: Color(0xFF64748B),
+                        style: TextStyle(
+                          color: theme.colorScheme.onSurfaceVariant,
                           fontSize: 14,
                         ),
                       ),
 
                       const SizedBox(height: 24),
 
-                      const Row(
+                      Row(
                         children: [
                           _EmployerStat(
                               label: 'Active Jobs',
@@ -140,20 +142,22 @@ class EmployerPublicProfileScreen extends StatelessWidget {
 
                       const SizedBox(height: 40),
 
-                      const Text(
+                      Text(
                         'About Company',
                         style: TextStyle(
                             fontSize: 20,
+                            color: theme.colorScheme.onSurface,
                             fontWeight: FontWeight.w800),
                       ),
 
                       const SizedBox(height: 12),
 
-                      const SubscriptionGate(
+                      SubscriptionGate(
                         featureName: 'Employer Details',
                         requiredTier: 'pro',
                         child: Text(
                           'This employer is hiring skilled workers. More details coming soon.',
+                          style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
                         ),
                       ),
                     ],
@@ -161,7 +165,7 @@ class EmployerPublicProfileScreen extends StatelessWidget {
                 ),
               ),
 
-              const SliverToBoxAdapter(
+              SliverToBoxAdapter(
                   child: SizedBox(height: 100)),
             ],
           ),
@@ -175,13 +179,13 @@ class _EmployerStat extends StatelessWidget {
   final String label;
   final String value;
   final IconData icon;
-  final Color color;
+  final Color? color;
 
   const _EmployerStat({
     required this.label,
     required this.value,
     required this.icon,
-    this.color = const Color(0xFF1D4ED8),
+    this.color,
   });
 
   @override
@@ -195,11 +199,12 @@ class _EmployerStat extends StatelessWidget {
             Icon(icon, color: color, size: 16),
             const SizedBox(width: 4),
             Text(value,
-                style: const TextStyle(
+                style: TextStyle(
+                    color: color ?? Theme.of(context).colorScheme.primary,
                     fontWeight: FontWeight.bold)),
           ],
         ),
-        Text(label),
+        Text(label, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
       ],
     );
   }

@@ -10,6 +10,8 @@ class PostCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     /// 🔥 SAFE FALLBACKS (MANDATORY)
     final String uid = post['uid'] ?? '';
     final String name = post['name'] ?? 'Unknown User';
@@ -36,10 +38,10 @@ class PostCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(vertical: 12),
-      decoration: const BoxDecoration(
-        color: AppColors.darkSurfaceContainer,
+      decoration: BoxDecoration(
+        color: theme.cardColor,
         border: Border.symmetric(
-          horizontal: BorderSide(color: AppColors.darkSurfaceContainerHighest, width: 0.5),
+          horizontal: BorderSide(color: theme.colorScheme.outline, width: 0.5),
         ),
       ),
       child: Column(
@@ -54,12 +56,12 @@ class PostCard extends StatelessWidget {
                   onTap: () => context.push('/profile/$role/$uid'),
                   child: CircleAvatar(
                     radius: 24,
-                    backgroundColor: AppColors.darkSurfaceContainerHighest,
+                    backgroundColor: theme.colorScheme.surfaceVariant,
                     backgroundImage: (profilePhotoUrl != null && profilePhotoUrl.isNotEmpty)
                         ? NetworkImage(profilePhotoUrl)
                         : null,
                     child: (profilePhotoUrl == null || profilePhotoUrl.isEmpty)
-                        ? const Icon(Icons.person, color: Colors.white70)
+                        ? Icon(Icons.person, color: theme.colorScheme.onSurfaceVariant)
                         : null,
                   ),
                 ),
@@ -75,8 +77,8 @@ class PostCard extends StatelessWidget {
                             Flexible(
                               child: Text(
                                 name,
-                                style: const TextStyle(
-                                  color: Colors.white,
+                                style: TextStyle(
+                                  color: theme.colorScheme.onSurface,
                                   fontWeight: FontWeight.w700,
                                   fontSize: 15,
                                 ),
@@ -88,7 +90,7 @@ class PostCard extends StatelessWidget {
                               const Icon(Icons.verified, color: Colors.blue, size: 14),
                             ],
                             const SizedBox(width: 4),
-                            const Text('•', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                            Text('•', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12)),
                             const SizedBox(width: 4),
                             Text(
                               role.toUpperCase(),
@@ -103,14 +105,14 @@ class PostCard extends StatelessWidget {
                         ),
                         Text(
                           '${location.isNotEmpty ? "$location • " : ""}$timeStr',
-                          style: const TextStyle(color: AppColors.darkOnSurfaceVariant, fontSize: 12),
+                          style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12),
                         ),
                       ],
                     ),
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.more_horiz, color: AppColors.darkOnSurfaceVariant),
+                  icon: Icon(Icons.more_horiz, color: theme.colorScheme.onSurfaceVariant),
                   onPressed: () {},
                 ),
               ],
@@ -125,7 +127,7 @@ class PostCard extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Text(
                 text,
-                style: const TextStyle(color: Colors.white, fontSize: 14, height: 1.5),
+                style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 14, height: 1.5),
               ),
             ),
 
@@ -136,8 +138,8 @@ class PostCard extends StatelessWidget {
             Container(
               width: double.infinity,
               constraints: const BoxConstraints(maxHeight: 400),
-              decoration: const BoxDecoration(
-                color: AppColors.darkSurface,
+              decoration: BoxDecoration(
+                color: theme.scaffoldBackgroundColor,
               ),
               child: Image.network(
                 imageUrl,
@@ -164,27 +166,27 @@ class PostCard extends StatelessWidget {
                 const SizedBox(width: 4),
                 Text(
                   "$likes",
-                  style: const TextStyle(color: AppColors.darkOnSurfaceVariant, fontSize: 12),
+                  style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12),
                 ),
                 const Spacer(),
                 Text(
                   "$comments comments",
-                  style: const TextStyle(color: AppColors.darkOnSurfaceVariant, fontSize: 12),
+                  style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12),
                 ),
               ],
             ),
           ),
 
-          const Divider(color: AppColors.darkSurfaceContainerHighest, indent: 16, endIndent: 16),
+          Divider(color: theme.colorScheme.outline, indent: 16, endIndent: 16),
 
           /// 🔹 ACTIONS
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildActionButton(Icons.thumb_up_off_alt, 'Like'),
-              _buildActionButton(Icons.comment_outlined, 'Comment'),
-              _buildActionButton(Icons.share_outlined, 'Share'),
-              _buildActionButton(Icons.send_outlined, 'Send'),
+              _buildActionButton(Icons.thumb_up_off_alt, 'Like', theme),
+              _buildActionButton(Icons.comment_outlined, 'Comment', theme),
+              _buildActionButton(Icons.share_outlined, 'Share', theme),
+              _buildActionButton(Icons.send_outlined, 'Send', theme),
             ],
           ),
         ],
@@ -192,18 +194,18 @@ class PostCard extends StatelessWidget {
     );
   }
 
-  Widget _buildActionButton(IconData icon, String label) {
+  Widget _buildActionButton(IconData icon, String label, ThemeData theme) {
     return InkWell(
       onTap: () {},
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
         child: Column(
           children: [
-            Icon(icon, color: AppColors.darkOnSurfaceVariant, size: 20),
+            Icon(icon, color: theme.colorScheme.onSurfaceVariant, size: 20),
             const SizedBox(height: 4),
             Text(
               label,
-              style: const TextStyle(color: AppColors.darkOnSurfaceVariant, fontSize: 10, fontWeight: FontWeight.w600),
+              style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 10, fontWeight: FontWeight.w600),
             ),
           ],
         ),

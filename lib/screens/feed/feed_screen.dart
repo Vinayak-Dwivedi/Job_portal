@@ -31,29 +31,30 @@ class _FeedScreenState extends ConsumerState<FeedScreen> with SingleTickerProvid
   @override
   Widget build(BuildContext context) {
     final feedAsyncValue = ref.watch(feedProvider);
+    final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: AppColors.darkSurface,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Community Feed', 
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 24, letterSpacing: -0.5)),
-        backgroundColor: AppColors.darkSurface,
+        title: Text('Community Feed', 
+          style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.w900, fontSize: 24, letterSpacing: -0.5)),
+        backgroundColor: theme.scaffoldBackgroundColor,
         elevation: 0,
         centerTitle: false,
         actions: [
           IconButton(
-            icon: const Icon(Icons.search_rounded, color: Colors.white, size: 26),
+            icon: Icon(Icons.search_rounded, color: theme.colorScheme.onSurface, size: 26),
             onPressed: () {},
           ),
           IconButton(
-            icon: const Icon(Icons.notifications_none_rounded, color: Colors.white, size: 26),
+            icon: Icon(Icons.notifications_none_rounded, color: theme.colorScheme.onSurface, size: 26),
             onPressed: () {},
           )
         ],
         bottom: TabBar(
           controller: _tabController,
-          labelColor: Colors.white,
-          unselectedLabelColor: AppColors.darkOnSurfaceVariant,
+          labelColor: theme.colorScheme.onSurface,
+          unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
           indicatorColor: AppColors.primary,
           indicatorWeight: 3,
           labelStyle: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13, letterSpacing: 1.2),
@@ -69,18 +70,18 @@ class _FeedScreenState extends ConsumerState<FeedScreen> with SingleTickerProvid
       body: feedAsyncValue.when(
         data: (posts) {
           if (posts.isEmpty) {
-            return _buildEmptyState();
+            return _buildEmptyState(theme);
           }
 
           return RefreshIndicator(
-            backgroundColor: AppColors.darkSurfaceContainerHighest,
+            backgroundColor: theme.cardColor,
             color: AppColors.primary,
             onRefresh: () async => ref.refresh(feedProvider.future),
             child: ListView.builder(
               padding: const EdgeInsets.only(top: 8),
               itemCount: posts.length + 2,
               itemBuilder: (context, index) {
-                if (index == 0) return _buildCreatePostArea(context);
+                if (index == 0) return _buildCreatePostArea(context, theme);
                 if (index == 1) return _buildPromoCard(context);
                 return PostCard(post: posts[index - 2]);
               },
@@ -106,22 +107,22 @@ class _FeedScreenState extends ConsumerState<FeedScreen> with SingleTickerProvid
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(ThemeData theme) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.feed_outlined, color: AppColors.darkSurfaceContainerHighest, size: 80),
+          Icon(Icons.feed_outlined, color: theme.colorScheme.surfaceVariant, size: 80),
           const SizedBox(height: 16),
-          const Text(
+          Text(
             'No posts yet',
-            style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+            style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 20, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'Be the first to share an update with the community!',
             textAlign: TextAlign.center,
-            style: TextStyle(color: AppColors.darkOnSurfaceVariant, fontSize: 14),
+            style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 14),
           ),
           const SizedBox(height: 24),
           ElevatedButton(
@@ -144,7 +145,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> with SingleTickerProvid
       child: ListView.builder(
         itemCount: 5,
         itemBuilder: (context, index) => PostCard(
-          post: {
+          post: const {
             'name': 'Loading Name',
             'text': 'This is a sample loading text to show the skeleton effect in the feed screen.',
             'location': 'Loading Location',
@@ -157,24 +158,24 @@ class _FeedScreenState extends ConsumerState<FeedScreen> with SingleTickerProvid
     );
   }
 
-  Widget _buildCreatePostArea(BuildContext context) {
+  Widget _buildCreatePostArea(BuildContext context, ThemeData theme) {
     return Container(
       padding: const EdgeInsets.all(16),
       margin: const EdgeInsets.only(bottom: 8),
-      decoration: const BoxDecoration(
-        color: AppColors.darkSurfaceContainer,
+      decoration: BoxDecoration(
+        color: theme.cardColor,
         border: Border.symmetric(
-          horizontal: BorderSide(color: AppColors.darkSurfaceContainerHighest, width: 0.5),
+          horizontal: BorderSide(color: theme.colorScheme.outline, width: 0.5),
         ),
       ),
       child: Column(
         children: [
           Row(
             children: [
-              const CircleAvatar(
+              CircleAvatar(
                 radius: 20,
-                backgroundColor: AppColors.darkSurfaceContainerHighest,
-                backgroundImage: NetworkImage('https://ui-avatars.com/api/?name=User&background=1D4ED8&color=fff'),
+                backgroundColor: theme.colorScheme.surfaceVariant,
+                backgroundImage: const NetworkImage('https://ui-avatars.com/api/?name=User&background=1D4ED8&color=fff'),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -183,12 +184,12 @@ class _FeedScreenState extends ConsumerState<FeedScreen> with SingleTickerProvid
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     decoration: BoxDecoration(
-                      color: AppColors.darkSurface,
+                      color: theme.scaffoldBackgroundColor,
                       borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: AppColors.darkSurfaceContainerHighest),
+                      border: Border.all(color: theme.colorScheme.outline),
                     ),
-                    child: const Text('Share your professional updates...', 
-                      style: TextStyle(color: AppColors.darkOnSurfaceVariant, fontSize: 13, fontWeight: FontWeight.w500)),
+                    child: Text('Share your professional updates...', 
+                      style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 13, fontWeight: FontWeight.w500)),
                   ),
                 ),
               ),
@@ -198,9 +199,9 @@ class _FeedScreenState extends ConsumerState<FeedScreen> with SingleTickerProvid
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildPostAction(Icons.image_outlined, 'Photo', Colors.blue),
-              _buildPostAction(Icons.videocam_outlined, 'Video', Colors.green),
-              _buildPostAction(Icons.event_note_outlined, 'Event', Colors.orange),
+              _buildPostAction(Icons.image_outlined, 'Photo', Colors.blue, theme),
+              _buildPostAction(Icons.videocam_outlined, 'Video', Colors.green, theme),
+              _buildPostAction(Icons.event_note_outlined, 'Event', Colors.orange, theme),
             ],
           ),
         ],
@@ -208,14 +209,14 @@ class _FeedScreenState extends ConsumerState<FeedScreen> with SingleTickerProvid
     );
   }
 
-  Widget _buildPostAction(IconData icon, String label, Color color) {
+  Widget _buildPostAction(IconData icon, String label, Color color, ThemeData theme) {
     return GestureDetector(
       onTap: () => context.push('/feed/create'),
       child: Row(
         children: [
           Icon(icon, color: color, size: 20),
           const SizedBox(width: 8),
-          Text(label, style: const TextStyle(color: AppColors.darkOnSurfaceVariant, fontSize: 13, fontWeight: FontWeight.w600)),
+          Text(label, style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 13, fontWeight: FontWeight.w600)),
         ],
       ),
     );
@@ -273,4 +274,3 @@ class _FeedScreenState extends ConsumerState<FeedScreen> with SingleTickerProvid
     );
   }
 }
-

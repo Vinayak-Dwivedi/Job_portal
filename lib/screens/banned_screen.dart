@@ -7,8 +7,9 @@ class BannedScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(32.0),
@@ -17,19 +18,19 @@ class BannedScreen extends StatelessWidget {
             children: [
               const Icon(Icons.gavel_rounded, color: Colors.red, size: 100),
               const SizedBox(height: 32),
-              const Text(
+              Text(
                 'Account Suspended',
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF0F172A),
+                  color: theme.colorScheme.onSurface,
                 ),
               ),
               const SizedBox(height: 16),
-              const Text(
+              Text(
                 'Your account has been banned for violating our community guidelines or terms of service. You no longer have access to the platform.',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Color(0xFF64748B), fontSize: 16, height: 1.5),
+                style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 16, height: 1.5),
               ),
               const SizedBox(height: 48),
               SizedBox(
@@ -43,10 +44,10 @@ class BannedScreen extends StatelessWidget {
                   },
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    side: const BorderSide(color: Color(0xFFE2E8F0)),
+                    side: BorderSide(color: theme.colorScheme.outline.withOpacity(0.2)),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   ),
-                  child: const Text('Return Home / Sign Out', style: TextStyle(color: Color(0xFF64748B), fontSize: 16, fontWeight: FontWeight.bold)),
+                  child: Text('Return Home / Sign Out', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 16, fontWeight: FontWeight.bold)),
                 ),
               ),
             ],

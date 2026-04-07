@@ -46,11 +46,13 @@ class KIBottomNavBar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF0B1120), // Darker UI background
+        color: theme.cardColor,
         border: Border(
-          top: BorderSide(color: Colors.white.withOpacity(0.06), width: 1),
+          top: BorderSide(color: theme.colorScheme.outline.withOpacity(0.1), width: 0.5),
         ),
       ),
       child: SafeArea(
@@ -104,8 +106,8 @@ class KIBottomNavBar extends ConsumerWidget {
                         Icon(
                           _items[i].icon,
                           color: selected
-                              ? const Color(0xFF2563EB)
-                              : Colors.grey.shade500,
+                              ? theme.colorScheme.primary
+                              : theme.colorScheme.onSurfaceVariant,
                           size: 24,
                         ),
                         const SizedBox(height: 4),
@@ -117,8 +119,8 @@ class KIBottomNavBar extends ConsumerWidget {
                                 ? FontWeight.w700
                                 : FontWeight.w500,
                             color: selected
-                                ? const Color(0xFF2563EB)
-                                : Colors.grey.shade500,
+                                ? theme.colorScheme.primary
+                                : theme.colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ],

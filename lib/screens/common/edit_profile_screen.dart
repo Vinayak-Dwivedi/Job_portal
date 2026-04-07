@@ -130,16 +130,15 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          backgroundColor: const Color(0xFF1E293B),
-          title: const Text('Add Document', style: TextStyle(color: Colors.white)),
+          backgroundColor: Theme.of(context).cardColor,
+          title: Text('Add Document', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
           content: TextField(
-            controller: docNameController,
-            style: const TextStyle(color: Colors.white),
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
             decoration: InputDecoration(
               hintText: 'Document Name',
-              hintStyle: const TextStyle(color: Colors.grey),
+              hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
               filled: true,
-              fillColor: const Color(0xFF0F172A),
+              fillColor: Theme.of(context).scaffoldBackgroundColor,
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
             ),
           ),
@@ -158,7 +157,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   Navigator.pop(context);
                 }
               },
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2563EB)),
+              style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.primary),
               child: const Text('Add', style: TextStyle(color: Colors.white)),
             ),
           ],
@@ -178,23 +177,25 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     if (_isLoading) {
-      return const Scaffold(
-        backgroundColor: Color(0xFF0F172A),
-        body: Center(child: CircularProgressIndicator(color: Color(0xFF2563EB))),
+      return Scaffold(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        body: Center(child: CircularProgressIndicator(color: theme.colorScheme.primary)),
       );
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0F172A),
+        backgroundColor: theme.scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF2563EB)),
+          icon: Icon(Icons.arrow_back, color: theme.colorScheme.primary),
           onPressed: () => context.pop(),
         ),
-        title: const Text('Edit Profile', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+        title: Text('Edit Profile', style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 18)),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -203,17 +204,17 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildTextField('Name', _nameController, isRequired: true),
+              _buildTextField('Name', _nameController, theme, isRequired: true),
               const SizedBox(height: 16),
-              _buildTextField('Bio', _bioController, maxLines: 4),
+              _buildTextField('Bio', _bioController, theme, maxLines: 4),
               const SizedBox(height: 16),
-              _buildTextField('Address', _addressController),
+              _buildTextField('Address', _addressController, theme),
               const SizedBox(height: 16),
               
               if (_role == 'worker') ...[
-                _buildTextField('Experience (Years)', _experienceController, isNumber: true),
+                _buildTextField('Experience (Years)', _experienceController, theme, isNumber: true),
                 const SizedBox(height: 16),
-                const Text('Skills', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
+                Text('Skills', style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 14, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 8),
                 Wrap(
                   spacing: 8,
@@ -221,11 +222,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   children: _availableCategories.map((skill) {
                     final isSelected = _selectedSkills.contains(skill);
                     return ChoiceChip(
-                      label: Text(skill, style: TextStyle(color: isSelected ? Colors.white : Colors.grey.shade300, fontSize: 12)),
+                      label: Text(skill, style: TextStyle(color: isSelected ? Colors.white : theme.colorScheme.onSurfaceVariant, fontSize: 12)),
                       selected: isSelected,
-                      selectedColor: const Color(0xFF2563EB),
-                      backgroundColor: const Color(0xFF1E293B),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: isSelected ? const Color(0xFF2563EB) : Colors.transparent)),
+                      selectedColor: theme.colorScheme.primary,
+                      backgroundColor: theme.cardColor,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: isSelected ? theme.colorScheme.primary : Colors.transparent)),
                       onSelected: (selected) {
                         setState(() {
                           if (selected) {
@@ -247,17 +248,17 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Documents', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                  Text('Documents', style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 18, fontWeight: FontWeight.bold)),
                   TextButton.icon(
                     onPressed: _showAddDocumentDialog,
-                    icon: const Icon(Icons.add, color: Color(0xFF2563EB), size: 18),
-                    label: const Text('Add Document', style: TextStyle(color: Color(0xFF2563EB))),
+                    icon: Icon(Icons.add, color: theme.colorScheme.primary, size: 18),
+                    label: Text('Add Document', style: TextStyle(color: theme.colorScheme.primary)),
                   ),
                 ],
               ),
               const SizedBox(height: 8),
               if (_documents.isEmpty)
-                const Text('No documents added yet.', style: TextStyle(color: Colors.grey, fontSize: 13))
+                Text('No documents added yet.', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 13))
               else
                 ListView.builder(
                   shrinkWrap: true,
@@ -269,7 +270,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       margin: const EdgeInsets.only(bottom: 8),
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF1E293B),
+                        color: theme.cardColor,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
@@ -303,7 +304,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 child: ElevatedButton(
                   onPressed: _isSaving ? null : _saveProfile,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF2563EB),
+                    backgroundColor: theme.colorScheme.primary,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   child: _isSaving 
@@ -319,16 +320,16 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     );
   }
 
-  Widget _buildTextField(String label, TextEditingController controller, {bool isRequired = false, bool isNumber = false, int maxLines = 1}) {
+  Widget _buildTextField(String label, TextEditingController controller, ThemeData theme, {bool isRequired = false, bool isNumber = false, int maxLines = 1}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
+        Text(label, style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 14, fontWeight: FontWeight.w600)),
         const SizedBox(height: 8),
         TextFormField(
           controller: controller,
           maxLines: maxLines,
-          style: const TextStyle(color: Colors.white),
+          style: TextStyle(color: theme.colorScheme.onSurface),
           keyboardType: isNumber ? TextInputType.number : TextInputType.text,
           validator: isRequired ? (value) {
             if (value == null || value.trim().isEmpty) return 'This field is required';
@@ -336,7 +337,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           } : null,
           decoration: InputDecoration(
             filled: true,
-            fillColor: const Color(0xFF1E293B),
+            fillColor: theme.cardColor,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide.none,

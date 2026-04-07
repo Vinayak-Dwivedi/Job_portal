@@ -5,12 +5,13 @@ class EmployerWorkersScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Browse Workers', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text('Browse Workers', style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
         centerTitle: true,
-        backgroundColor: Colors.white,
+        backgroundColor: theme.cardColor,
         elevation: 0,
       ),
       body: Center(
@@ -19,13 +20,13 @@ class EmployerWorkersScreen extends StatelessWidget {
           children: [
             Container(
               padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(color: Colors.blue.shade50, shape: BoxShape.circle),
-              child: const Icon(Icons.person_search_outlined, size: 64, color: Color(0xFF1D4ED8)),
+              decoration: BoxDecoration(color: theme.colorScheme.primary.withOpacity(0.1), shape: BoxShape.circle),
+              child: Icon(Icons.person_search_outlined, size: 64, color: theme.colorScheme.primary),
             ),
             const SizedBox(height: 24),
-            const Text(
+            Text(
               'Looking for talent?',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
             ),
             const SizedBox(height: 12),
             Padding(
@@ -33,7 +34,7 @@ class EmployerWorkersScreen extends StatelessWidget {
               child: Text(
                 'This feature is coming soon! You will be able to search and message skilled Karigars directly.',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey.shade600, fontSize: 15),
+                style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 15),
               ),
             ),
           ],

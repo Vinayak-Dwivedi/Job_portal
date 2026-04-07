@@ -28,23 +28,24 @@ class _EmployerDashboardScreenState extends ConsumerState<EmployerDashboardScree
   @override
   Widget build(BuildContext context) {
     final employer = ref.watch(employerProvider);
+    final theme = Theme.of(context);
 
     if (employer == null) {
-      return const Scaffold(
-        backgroundColor: AppColors.darkSurface,
-        body: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+      return Scaffold(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        body: const Center(child: CircularProgressIndicator(color: AppColors.primary)),
       );
     }
 
     return Scaffold(
-      backgroundColor: AppColors.darkSurface,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: () async {
             final auth = ref.read(authProvider);
             if (auth != null) await ref.read(employerProvider.notifier).loadProfile(auth.uid);
           },
-          backgroundColor: AppColors.darkSurfaceContainerHighest,
+          backgroundColor: theme.scaffoldBackgroundColor,
           color: AppColors.primary,
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
@@ -64,12 +65,12 @@ class _EmployerDashboardScreenState extends ConsumerState<EmployerDashboardScree
                       ),
                       child: CircleAvatar(
                         radius: 26,
-                        backgroundColor: AppColors.darkSurfaceContainer,
+                        backgroundColor: theme.cardColor,
                         backgroundImage: (employer.profilePhotoUrl != null && employer.profilePhotoUrl!.isNotEmpty)
                             ? NetworkImage(employer.profilePhotoUrl!)
                             : null,
                         child: (employer.profilePhotoUrl == null || employer.profilePhotoUrl!.isEmpty)
-                            ? const Icon(Icons.business, color: Colors.white70)
+                            ? Icon(Icons.business, color: theme.colorScheme.onSurfaceVariant)
                             : null,
                       ),
                     ),
@@ -80,22 +81,22 @@ class _EmployerDashboardScreenState extends ConsumerState<EmployerDashboardScree
                         children: [
                           Text(
                             'Hello, ${employer.companyName.isNotEmpty ? employer.companyName : employer.contactName}',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.w900,
-                              color: Colors.white,
+                              color: theme.colorScheme.onSurface,
                               letterSpacing: -0.5,
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
-                          const Text(
+                          Text(
                             'Employer Account • Verified',
-                            style: TextStyle(color: AppColors.darkOnSurfaceVariant, fontSize: 12, fontWeight: FontWeight.w600),
+                            style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12, fontWeight: FontWeight.w600),
                           ),
                         ],
                       ),
                     ),
-                    _buildIconButton(Icons.notifications_none_rounded, () {}),
+                    _buildIconButton(Icons.notifications_none_rounded, theme, () {}),
                   ],
                 ),
                 const SizedBox(height: 32),
@@ -113,24 +114,28 @@ class _EmployerDashboardScreenState extends ConsumerState<EmployerDashboardScree
                       label: 'Post a Job',
                       icon: Icons.add_business_rounded,
                       color: const Color(0xFF2563EB),
+                      theme: theme,
                       onTap: () => context.push('/employer/create-job'),
                     ),
                     _QuickActionTile(
                       label: 'Create Post',
                       icon: Icons.edit_note_rounded,
                       color: const Color(0xFF059669),
+                      theme: theme,
                       onTap: () => context.push('/feed/create'),
                     ),
                     _QuickActionTile(
                       label: 'Find Workers',
                       icon: Icons.person_search_rounded,
                       color: const Color(0xFFEA580C),
+                      theme: theme,
                       onTap: () => context.go('/employer/workers'),
                     ),
                     _QuickActionTile(
                       label: 'Job Postings',
                       icon: Icons.list_alt_rounded,
                       color: const Color(0xFF1E3A8A),
+                      theme: theme,
                       onTap: () => context.go('/employer/my-jobs'),
                     ),
                   ],
@@ -138,34 +143,37 @@ class _EmployerDashboardScreenState extends ConsumerState<EmployerDashboardScree
                 const SizedBox(height: 32),
 
                 /// ── Stats Row ────────────────────────────────
-                const Text(
+                Text(
                   'Insights',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Colors.white),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: theme.colorScheme.onSurface),
                 ),
                 const SizedBox(height: 16),
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     children: [
-                      const _StatCard(
+                      _StatCard(
                         label: 'Active Jobs',
                         value: '03',
                         progress: 0.7,
-                        color: Color(0xFF2563EB),
+                        color: const Color(0xFF2563EB),
+                        theme: theme,
                       ),
                       const SizedBox(width: 16),
-                      const _StatCard(
+                      _StatCard(
                         label: 'Applicants',
                         value: '47',
                         progress: 0.5,
-                        color: Color(0xFF059669),
+                        color: const Color(0xFF059669),
+                        theme: theme,
                       ),
                       const SizedBox(width: 16),
-                      const _StatCard(
+                      _StatCard(
                         label: 'Profile Views',
                         value: '1.2k',
                         progress: 0.8,
-                        color: Color(0xFF6366F1),
+                        color: const Color(0xFF6366F1),
+                        theme: theme,
                       ),
                     ],
                   ),
@@ -176,9 +184,9 @@ class _EmployerDashboardScreenState extends ConsumerState<EmployerDashboardScree
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
+                    Text(
                       'Recent Listings',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Colors.white),
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: theme.colorScheme.onSurface),
                     ),
                     TextButton(
                       onPressed: () => context.go('/employer/my-jobs'),
@@ -189,20 +197,22 @@ class _EmployerDashboardScreenState extends ConsumerState<EmployerDashboardScree
                 ),
                 const SizedBox(height: 12),
 
-                const _JobCard(
+                _JobCard(
                   title: 'Senior Carpenter',
                   postedDate: '12 Oct, 2023',
-                  tags: ['Woodwork', 'Furniture'],
+                  tags: const ['Woodwork', 'Furniture'],
                   location: 'Mumbai, MH',
                   applicants: 12,
+                  theme: theme,
                 ),
                 const SizedBox(height: 12),
-                const _JobCard(
+                _JobCard(
                   title: 'Site Electrician',
                   postedDate: '10 Oct, 2023',
-                  tags: ['Wiring', 'Industrial'],
+                  tags: const ['Wiring', 'Industrial'],
                   location: 'Pune, MH',
                   applicants: 8,
+                  theme: theme,
                 ),
                 const SizedBox(height: 100),
               ],
@@ -213,16 +223,16 @@ class _EmployerDashboardScreenState extends ConsumerState<EmployerDashboardScree
     );
   }
 
-  Widget _buildIconButton(IconData icon, VoidCallback onTap) {
+  Widget _buildIconButton(IconData icon, ThemeData theme, VoidCallback onTap) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.darkSurfaceContainer,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.darkSurfaceContainerHighest),
+        border: Border.all(color: theme.colorScheme.outline),
       ),
       child: IconButton(
         onPressed: onTap,
-        icon: Icon(icon, color: Colors.white, size: 24),
+        icon: Icon(icon, color: theme.colorScheme.onSurface, size: 24),
       ),
     );
   }
@@ -232,12 +242,14 @@ class _QuickActionTile extends StatelessWidget {
   final String label;
   final IconData icon;
   final Color color;
+  final ThemeData theme;
   final VoidCallback onTap;
 
   const _QuickActionTile({
     required this.label,
     required this.icon,
     required this.color,
+    required this.theme,
     required this.onTap,
   });
 
@@ -249,9 +261,9 @@ class _QuickActionTile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
-          color: AppColors.darkSurfaceContainer,
+          color: theme.cardColor,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.darkSurfaceContainerHighest),
+          border: Border.all(color: theme.colorScheme.outline),
         ),
         child: Row(
           children: [
@@ -267,7 +279,7 @@ class _QuickActionTile extends StatelessWidget {
             Expanded(
               child: Text(
                 label,
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Colors.white),
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: theme.colorScheme.onSurface),
               ),
             ),
           ],
@@ -282,12 +294,14 @@ class _StatCard extends StatelessWidget {
   final String value;
   final double progress;
   final Color color;
+  final ThemeData theme;
 
   const _StatCard({
     required this.label,
     required this.value,
     required this.progress,
     required this.color,
+    required this.theme,
   });
 
   @override
@@ -296,9 +310,9 @@ class _StatCard extends StatelessWidget {
       width: 160,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.darkSurfaceContainer,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.darkSurfaceContainerHighest),
+        border: Border.all(color: theme.colorScheme.outline),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -310,14 +324,14 @@ class _StatCard extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             label,
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.darkOnSurfaceVariant),
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: theme.colorScheme.onSurfaceVariant),
           ),
           const SizedBox(height: 16),
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
               value: progress,
-              backgroundColor: AppColors.darkSurface,
+              backgroundColor: theme.scaffoldBackgroundColor,
               valueColor: AlwaysStoppedAnimation<Color>(color),
               minHeight: 4,
             ),
@@ -334,6 +348,7 @@ class _JobCard extends StatelessWidget {
   final List<String> tags;
   final String location;
   final int applicants;
+  final ThemeData theme;
 
   const _JobCard({
     required this.title,
@@ -341,6 +356,7 @@ class _JobCard extends StatelessWidget {
     required this.tags,
     required this.location,
     required this.applicants,
+    required this.theme,
   });
 
   @override
@@ -348,9 +364,9 @@ class _JobCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.darkSurfaceContainer,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.darkSurfaceContainerHighest),
+        border: Border.all(color: theme.colorScheme.outline),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -364,12 +380,12 @@ class _JobCard extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: Colors.white, letterSpacing: -0.3),
+                      style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: theme.colorScheme.onSurface, letterSpacing: -0.3),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       'Posted on $postedDate',
-                      style: const TextStyle(fontSize: 12, color: AppColors.darkOnSurfaceVariant, fontWeight: FontWeight.w500),
+                      style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant, fontWeight: FontWeight.w500),
                     ),
                   ],
                 ),
@@ -392,14 +408,14 @@ class _JobCard extends StatelessWidget {
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: tags.map((t) => _Tag(t)).toList(),
+            children: tags.map((t) => _Tag(t, theme: theme)).toList(),
           ),
           const SizedBox(height: 20),
           Row(
             children: [
-              const Icon(Icons.location_on_rounded, size: 16, color: AppColors.darkOnSurfaceVariant),
+              Icon(Icons.location_on_rounded, size: 16, color: theme.colorScheme.onSurfaceVariant),
               const SizedBox(width: 4),
-              Text(location, style: const TextStyle(color: AppColors.darkOnSurfaceVariant, fontSize: 13, fontWeight: FontWeight.w500)),
+              Text(location, style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 13, fontWeight: FontWeight.w500)),
               const Spacer(),
               const Icon(Icons.people_alt_rounded, size: 16, color: Color(0xFF10B981)),
               const SizedBox(width: 4),
@@ -407,7 +423,7 @@ class _JobCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          const Divider(color: AppColors.darkSurfaceContainerHighest, height: 1),
+          Divider(color: theme.colorScheme.outline, height: 1),
           const SizedBox(height: 16),
           InkWell(
             onTap: () {},
@@ -431,20 +447,21 @@ class _JobCard extends StatelessWidget {
 
 class _Tag extends StatelessWidget {
   final String text;
-  const _Tag(this.text);
+  final ThemeData theme;
+  const _Tag(this.text, {required this.theme});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.darkSurface,
+        color: theme.scaffoldBackgroundColor,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.darkSurfaceContainerHighest),
+        border: Border.all(color: theme.colorScheme.outline),
       ),
       child: Text(
         text,
-        style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w700),
+        style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 11, fontWeight: FontWeight.w700),
       ),
     );
   }

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/employer_provider.dart';
+import '../../providers/theme_provider.dart';
 
 class EmployerProfileScreen extends ConsumerWidget {
   const EmployerProfileScreen({super.key});
@@ -11,14 +12,17 @@ class EmployerProfileScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final employer = ref.watch(employerProvider);
     final authNotifier = ref.read(authProvider.notifier);
+    final themeMode = ref.watch(themeModeProvider);
+    final isDark = themeMode == ThemeMode.dark;
+    final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0F172A),
+        backgroundColor: theme.scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF3B82F6)), // Light blue matching design
+          icon: Icon(Icons.arrow_back, color: theme.colorScheme.primary),
           onPressed: () {
             if (context.canPop()) {
               context.pop();
@@ -31,15 +35,19 @@ class EmployerProfileScreen extends ConsumerWidget {
           (employer?.companyName != null && employer!.companyName.isNotEmpty) 
               ? employer.companyName 
               : 'The Digital Atelier',
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+          style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 18),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.settings, color: Colors.grey),
+            icon: Icon(isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded, color: theme.colorScheme.onSurfaceVariant),
+            onPressed: () => ref.read(themeModeProvider.notifier).toggleTheme(),
+          ),
+          IconButton(
+            icon: Icon(Icons.settings, color: theme.colorScheme.onSurfaceVariant),
             onPressed: () {
                showModalBottomSheet(
                  context: context,
-                 backgroundColor: const Color(0xFF1E293B),
+                 backgroundColor: theme.cardColor,
                  shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
                  builder: (context) => SafeArea(
                    child: Column(
@@ -67,27 +75,27 @@ class EmployerProfileScreen extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Profile Info Header
-            _buildProfileHeader(employer),
+            _buildProfileHeader(employer, theme),
             const SizedBox(height: 24),
 
             // Action Buttons
-            _buildActionButtons(context),
+            _buildActionButtons(context, theme),
             const SizedBox(height: 24),
 
             // Statistics
-            _buildStatisticsCards(),
+            _buildStatisticsCards(theme),
             const SizedBox(height: 24),
 
             // About Section
-            _buildAboutSection(employer),
+            _buildAboutSection(employer, theme),
             const SizedBox(height: 24),
 
             // Active Jobs Section
-            _buildActiveJobsSection(),
+            _buildActiveJobsSection(theme),
             const SizedBox(height: 24),
 
             // Documents Section
-            _buildDocumentsSection(),
+            _buildDocumentsSection(theme),
             const SizedBox(height: 40), // Bottom padding
           ],
         ),
@@ -95,7 +103,7 @@ class EmployerProfileScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildProfileHeader(EmployerProfile? employer) {
+  Widget _buildProfileHeader(EmployerProfile? employer, ThemeData theme) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -106,11 +114,11 @@ class EmployerProfileScreen extends ConsumerWidget {
             Container(
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(color: Colors.white.withOpacity(0.8), width: 2),
+                border: Border.all(color: theme.scaffoldBackgroundColor, width: 2),
               ),
               child: CircleAvatar(
                 radius: 40,
-                backgroundColor: const Color(0xFF000839),
+                backgroundColor: theme.colorScheme.surfaceVariant,
                 backgroundImage: (employer?.profilePhotoUrl != null && employer!.profilePhotoUrl!.isNotEmpty)
                     ? NetworkImage(employer.profilePhotoUrl!)
                     : null,
@@ -149,50 +157,50 @@ class EmployerProfileScreen extends ConsumerWidget {
           (employer?.name != null && employer!.name.isNotEmpty) 
               ? employer.name 
               : 'Rajesh Construction',
-          style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+          style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 22, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
             color: Colors.transparent,
-            border: Border.all(color: Colors.grey.shade700),
+            border: Border.all(color: theme.colorScheme.outline),
             borderRadius: BorderRadius.circular(20),
           ),
-          child: const Text(
+          child: Text(
             'CIVIL CONSTRUCTION',
-            style: TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.w600, letterSpacing: 0.5),
+            style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 10, fontWeight: FontWeight.w600, letterSpacing: 0.5),
           ),
         ),
         const SizedBox(height: 12),
         Row(
-          children: const [
-            Icon(Icons.star, color: Colors.amber, size: 16),
-            SizedBox(width: 4),
-            Text('4.9', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
-            SizedBox(width: 6),
-            Text('(156 ratings)', style: TextStyle(color: Colors.grey, fontSize: 12)),
+          children: [
+            const Icon(Icons.star, color: Colors.amber, size: 16),
+            const SizedBox(width: 4),
+            Text('4.9', style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 14)),
+            const SizedBox(width: 6),
+            Text('(156 ratings)', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12)),
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: 8.0),
-              child: Text('•', style: TextStyle(color: Colors.grey, fontSize: 14)),
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              child: Text('•', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 14)),
             ),
-            Icon(Icons.location_on, color: Colors.grey, size: 14),
-            SizedBox(width: 4),
-            Text('Mumbai, MH', style: TextStyle(color: Colors.grey, fontSize: 13)),
+            Icon(Icons.location_on, color: theme.colorScheme.onSurfaceVariant, size: 14),
+            const SizedBox(width: 4),
+            Text('Mumbai, MH', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 13)),
           ],
         ),
       ],
     );
   }
 
-  Widget _buildActionButtons(BuildContext context) {
+  Widget _buildActionButtons(BuildContext context, ThemeData theme) {
     return Row(
       children: [
         Expanded(
           child: Container(
             height: 54,
             decoration: BoxDecoration(
-              color: const Color(0xFF1D4ED8),
+              color: theme.colorScheme.primary,
               borderRadius: BorderRadius.circular(10),
             ),
             child: Row(
@@ -216,15 +224,15 @@ class EmployerProfileScreen extends ConsumerWidget {
               height: 54,
               decoration: BoxDecoration(
                 color: Colors.transparent,
-                border: Border.all(color: const Color(0xFF1E293B), width: 1.5),
+                border: Border.all(color: theme.colorScheme.outline, width: 1.5),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.edit, color: Colors.blue.shade700, size: 18),
+                  Icon(Icons.edit, color: theme.colorScheme.primary, size: 18),
                   const SizedBox(width: 8),
-                  Text('Edit Profile', style: TextStyle(color: Colors.blue.shade700, fontWeight: FontWeight.w600, fontSize: 14)),
+                  Text('Edit Profile', style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.w600, fontSize: 14)),
                 ],
               ),
             ),
@@ -234,41 +242,41 @@ class EmployerProfileScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildStatisticsCards() {
+  Widget _buildStatisticsCards(ThemeData theme) {
     return Row(
       children: [
-        Expanded(child: _buildStatCard('ACTIVE POSTS', '12')),
+        Expanded(child: _buildStatCard('ACTIVE POSTS', '12', theme)),
         const SizedBox(width: 12),
-        Expanded(child: _buildStatCard('WORKERS HIRED', '45')),
+        Expanded(child: _buildStatCard('WORKERS HIRED', '45', theme)),
       ],
     );
   }
 
-  Widget _buildStatCard(String title, String value) {
+  Widget _buildStatCard(String title, String value, ThemeData theme) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B).withOpacity(0.5),
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(color: Colors.grey, fontSize: 10, letterSpacing: 1.0, fontWeight: FontWeight.w600)),
+          Text(title, style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 10, letterSpacing: 1.0, fontWeight: FontWeight.w600)),
           const SizedBox(height: 12),
-          Text(value, style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+          Text(value, style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 24, fontWeight: FontWeight.bold)),
         ],
       ),
     );
   }
 
-  Widget _buildAboutSection(EmployerProfile? employer) {
+  Widget _buildAboutSection(EmployerProfile? employer, ThemeData theme) {
     return Column(
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('About', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+            Text('About', style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 18, fontWeight: FontWeight.bold)),
             TextButton(
               onPressed: () {},
               child: const Text('View Portfolio', style: TextStyle(color: Colors.blueAccent, fontWeight: FontWeight.w600)),
@@ -279,33 +287,33 @@ class EmployerProfileScreen extends ConsumerWidget {
           width: double.infinity,
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-             color: const Color(0xFF1E293B).withOpacity(0.5),
+             color: theme.cardColor,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Text(
             '${(employer?.name != null && employer!.name.isNotEmpty) ? employer.name : "Rajesh Construction"} has been a cornerstone of urban development in Western India for over 15 years. Specialized in large-scale residential complexes and industrial infrastructure, we pride ourselves on precision engineering and fostering a skilled workforce environment. Our current portfolio includes the Metro-Link bridge expansion and the Sapphire Towers project.',
-            style: const TextStyle(color: Colors.white70, fontSize: 14, height: 1.6),
+            style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 14, height: 1.6),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildActiveJobsSection() {
+  Widget _buildActiveJobsSection(ThemeData theme) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('Active Jobs', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+            Text('Active Jobs', style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 18, fontWeight: FontWeight.bold)),
             GestureDetector(
               onTap: () {},
               child: Row(
-                children: const [
-                  Text('See All', style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w600)),
-                  SizedBox(width: 4),
-                  Icon(Icons.arrow_forward_ios, color: Colors.white70, size: 12),
+                children: [
+                  Text('See All', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 13, fontWeight: FontWeight.w600)),
+                  const SizedBox(width: 4),
+                  Icon(Icons.arrow_forward_ios, color: theme.colorScheme.onSurfaceVariant, size: 12),
                 ],
               ),
             ),
@@ -320,6 +328,7 @@ class EmployerProfileScreen extends ConsumerWidget {
           salary: '₹28k - 35k',
           applicants: 42,
           avatarOffset: true,
+          theme: theme,
         ),
         _buildJobCard(
           title: 'Industrial Electrician',
@@ -329,6 +338,7 @@ class EmployerProfileScreen extends ConsumerWidget {
           salary: '₹32k - 40k',
           applicants: 12,
           avatarOffset: false,
+          theme: theme,
         ),
       ],
     );
@@ -342,12 +352,13 @@ class EmployerProfileScreen extends ConsumerWidget {
     required String salary,
     required int applicants,
     required bool avatarOffset,
+    required ThemeData theme,
   }) {
     return Container(
       padding: const EdgeInsets.all(18),
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B).withOpacity(0.6),
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -357,7 +368,7 @@ class EmployerProfileScreen extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Text(title, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+              Text(title, style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 16, fontWeight: FontWeight.bold)),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
@@ -371,13 +382,13 @@ class EmployerProfileScreen extends ConsumerWidget {
           const SizedBox(height: 12),
           Row(
             children: [
-              const Icon(Icons.schedule, color: Colors.grey, size: 14),
+              Icon(Icons.schedule, color: theme.colorScheme.onSurfaceVariant, size: 14),
               const SizedBox(width: 4),
-              Text(type, style: const TextStyle(color: Colors.grey, fontSize: 13)),
+              Text(type, style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 13)),
               const SizedBox(width: 16),
-              const Icon(Icons.payments_outlined, color: Colors.grey, size: 14),
+              Icon(Icons.payments_outlined, color: theme.colorScheme.onSurfaceVariant, size: 14),
               const SizedBox(width: 4),
-              Text(salary, style: const TextStyle(color: Colors.grey, fontSize: 13)),
+              Text(salary, style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 13)),
             ],
           ),
           const SizedBox(height: 20),
@@ -407,14 +418,14 @@ class EmployerProfileScreen extends ConsumerWidget {
                       left: avatarOffset ? 32 : 16,
                       child: CircleAvatar(
                         radius: 12,
-                        backgroundColor: Colors.grey.shade700,
+                        backgroundColor: theme.colorScheme.outline,
                         child: const Text('+8', style: TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold)),
                       ),
                     ),
                   ],
                 ),
               ),
-              Text('$applicants Applicants', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+              Text('$applicants Applicants', style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 12, fontWeight: FontWeight.w600)),
             ],
           )
         ],
@@ -422,24 +433,24 @@ class EmployerProfileScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildDocumentsSection() {
+  Widget _buildDocumentsSection(ThemeData theme) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Documents', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+        Text('Documents', style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 18, fontWeight: FontWeight.bold)),
         const SizedBox(height: 16),
-        _buildDocCard('GST Registration', 'Last verified: Oct 2023'),
-        _buildDocCard('Business License', 'Valid until Dec 2025'),
+        _buildDocCard('GST Registration', 'Last verified: Oct 2023', theme),
+        _buildDocCard('Business License', 'Valid until Dec 2025', theme),
       ],
     );
   }
 
-  Widget _buildDocCard(String title, String subtitle) {
+  Widget _buildDocCard(String title, String subtitle, ThemeData theme) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B).withOpacity(0.6),
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -447,19 +458,19 @@ class EmployerProfileScreen extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-               color: const Color(0xFF0F172A),
+               color: theme.scaffoldBackgroundColor,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(Icons.description, color: Colors.blue.shade600, size: 24),
+            child: Icon(Icons.description, color: theme.colorScheme.primary, size: 24),
           ),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
+                Text(title, style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 15)),
                 const SizedBox(height: 4),
-                Text(subtitle, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                Text(subtitle, style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12)),
               ],
             ),
           ),

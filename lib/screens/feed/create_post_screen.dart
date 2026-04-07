@@ -19,9 +19,13 @@ class CreatePostScreen extends ConsumerStatefulWidget {
 
 class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
   final TextEditingController _descController = TextEditingController();
+  final TextEditingController _jobTitleController = TextEditingController();
+  final TextEditingController _jobSalaryController = TextEditingController();
+  final TextEditingController _jobLocationController = TextEditingController();
   final ImagePicker _picker = ImagePicker();
   final List<File> _selectedImages = [];
   bool _isLoading = false;
+  bool _isJobPost = false;
 
   Future<void> _pickImages() async {
     if (_selectedImages.length >= 1) {
@@ -93,6 +97,8 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
       String? photoUrl;
       bool isVerified = false;
 
+      String? employerCompany;
+
       if (isWorker) {
         final worker = ref.read(workerProvider);
         name = worker?.name ?? 'Worker';
@@ -103,6 +109,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
         name = employer?.name ?? 'Employer';
         photoUrl = employer?.profilePhotoUrl;
         isVerified = employer?.isVerified ?? false;
+        employerCompany = employer?.companyName;
       }
 
       await PostService.createPost(
@@ -113,7 +120,11 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
         imageFiles: _selectedImages,
         profilePhotoUrl: photoUrl,
         isVerified: isVerified,
-        location: 'Current Location', // Placeholder or fetch actual location
+        location: _isJobPost ? _jobLocationController.text.trim() : 'Current Location',
+        isJobPost: _isJobPost,
+        jobTitle: _isJobPost ? _jobTitleController.text.trim() : null,
+        jobSalary: _isJobPost ? _jobSalaryController.text.trim() : null,
+        companyName: _isJobPost ? (employerCompany?.isNotEmpty == true ? employerCompany : name) : null,
       );
 
       if (mounted) {
@@ -132,6 +143,9 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
   @override
   void dispose() {
     _descController.dispose();
+    _jobTitleController.dispose();
+    _jobSalaryController.dispose();
+    _jobLocationController.dispose();
     super.dispose();
   }
 
@@ -139,6 +153,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
   Widget build(BuildContext context) {
     final auth = ref.watch(authProvider);
     final isWorker = auth?.role == 'worker';
+    final theme = Theme.of(context);
     
     String name = 'User';
     String? photoUrl;
@@ -151,16 +166,16 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
     }
 
     return Scaffold(
-      backgroundColor: AppColors.darkSurface,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.darkSurface,
+        backgroundColor: theme.scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.close, color: Colors.white),
+          icon: Icon(Icons.close, color: theme.colorScheme.onSurface),
           onPressed: () => context.pop(),
         ),
-        title: const Text('New Post', 
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 20)),
+        title: Text('New Post', 
+          style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.w900, fontSize: 20)),
         actions: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
@@ -192,12 +207,12 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                     children: [
                       CircleAvatar(
                         radius: 20,
-                        backgroundColor: AppColors.darkSurfaceContainerHighest,
+                        backgroundColor: theme.colorScheme.surfaceVariant,
                         backgroundImage: (photoUrl != null && photoUrl.isNotEmpty)
                           ? NetworkImage(photoUrl)
                           : null,
                         child: (photoUrl == null || photoUrl.isEmpty)
-                          ? const Icon(Icons.person, color: Colors.white70)
+                          ? Icon(Icons.person, color: theme.colorScheme.onSurfaceVariant)
                           : null,
                       ),
                       const SizedBox(width: 12),
@@ -206,21 +221,21 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                         children: [
                           Text(
                             name,
-                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+                            style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 15),
                           ),
                           Container(
                             margin: const EdgeInsets.only(top: 2),
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                             decoration: BoxDecoration(
-                              color: AppColors.darkSurfaceContainerHighest,
+                              color: theme.colorScheme.surfaceVariant,
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Row(
                               children: [
-                                const Icon(Icons.public, size: 12, color: AppColors.darkOnSurfaceVariant),
+                                Icon(Icons.public, size: 12, color: theme.colorScheme.onSurfaceVariant),
                                 const SizedBox(width: 4),
-                                const Text('Public', style: TextStyle(color: AppColors.darkOnSurfaceVariant, fontSize: 10, fontWeight: FontWeight.bold)),
-                                const Icon(Icons.arrow_drop_down, size: 14, color: AppColors.darkOnSurfaceVariant),
+                                Text('Public', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 10, fontWeight: FontWeight.bold)),
+                                Icon(Icons.arrow_drop_down, size: 14, color: theme.colorScheme.onSurfaceVariant),
                               ],
                             ),
                           ),
@@ -234,13 +249,44 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                     maxLines: null,
                     minLines: 5,
                     autofocus: true,
-                    style: const TextStyle(color: Colors.white, fontSize: 18, height: 1.5),
-                    decoration: const InputDecoration(
-                      hintText: 'What do you want to talk about?',
-                      hintStyle: TextStyle(color: AppColors.darkOnSurfaceVariant, fontSize: 18),
+                    style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 18, height: 1.5),
+                    decoration: InputDecoration(
+                      hintText: _isJobPost ? 'Describe the job requirements...' : 'What do you want to talk about?',
+                      hintStyle: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 18),
                       border: InputBorder.none,
                     ),
                   ),
+                  const SizedBox(height: 16),
+                  if (!isWorker)
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: theme.cardColor,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: theme.colorScheme.outline),
+                      ),
+                      child: SwitchListTile(
+                        value: _isJobPost,
+                        onChanged: (val) {
+                          setState(() => _isJobPost = val);
+                        },
+                        title: Text('Post as a Job', style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.bold)),
+                        subtitle: Text('Will be featured in workers recommended jobs', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12)),
+                        activeColor: AppColors.primary,
+                      ),
+                    ),
+                  if (!isWorker && _isJobPost)
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildJobField('Job Title (e.g. Senior Welder)', _jobTitleController, theme),
+                        const SizedBox(height: 12),
+                        _buildJobField('Salary / Rate (e.g. ₹35,000/mo)', _jobSalaryController, theme),
+                        const SizedBox(height: 12),
+                        _buildJobField('Location (e.g. Mumbai, MH)', _jobLocationController, theme),
+                        const SizedBox(height: 16),
+                      ],
+                    ),
                   const SizedBox(height: 16),
                   if (_selectedImages.isNotEmpty)
                     Stack(
@@ -280,20 +326,20 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
               right: 16,
               top: 8,
             ),
-            decoration: const BoxDecoration(
-              color: AppColors.darkSurfaceContainer,
-              border: Border(top: BorderSide(color: AppColors.darkSurfaceContainerHighest, width: 0.5)),
+            decoration: BoxDecoration(
+              color: theme.cardColor,
+              border: Border(top: BorderSide(color: theme.colorScheme.outline, width: 0.5)),
             ),
             child: Row(
               children: [
-                _buildToolbarItem(Icons.image_outlined, 'Photo', _pickImages),
-                _buildToolbarItem(Icons.camera_alt_outlined, 'Video', _pickCamera),
-                _buildToolbarItem(Icons.event_outlined, 'Event', () {}),
-                _buildToolbarItem(Icons.more_horiz, '', () {}),
+                _buildToolbarItem(Icons.image_outlined, 'Photo', theme, _pickImages),
+                _buildToolbarItem(Icons.camera_alt_outlined, 'Video', theme, _pickCamera),
+                _buildToolbarItem(Icons.event_outlined, 'Event', theme, () {}),
+                _buildToolbarItem(Icons.more_horiz, '', theme, () {}),
                 const Spacer(),
-                const Icon(Icons.mode_comment_outlined, color: AppColors.darkOnSurfaceVariant),
+                Icon(Icons.mode_comment_outlined, color: theme.colorScheme.onSurfaceVariant),
                 const SizedBox(width: 4),
-                const Text('Anyone', style: TextStyle(color: AppColors.darkOnSurfaceVariant, fontSize: 12, fontWeight: FontWeight.bold)),
+                Text('Anyone', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12, fontWeight: FontWeight.bold)),
               ],
             ),
           ),
@@ -302,11 +348,26 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
     );
   }
 
-  Widget _buildToolbarItem(IconData icon, String label, VoidCallback onTap) {
+  Widget _buildToolbarItem(IconData icon, String label, ThemeData theme, VoidCallback onTap) {
     return IconButton(
-      icon: Icon(icon, color: AppColors.darkOnSurfaceVariant, size: 24),
+      icon: Icon(icon, color: theme.colorScheme.onSurfaceVariant, size: 24),
       onPressed: onTap,
       tooltip: label,
+    );
+  }
+
+  Widget _buildJobField(String hint, TextEditingController controller, ThemeData theme) {
+    return TextField(
+      controller: controller,
+      style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 14),
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 14),
+        filled: true,
+        fillColor: theme.colorScheme.surfaceVariant.withOpacity(0.3),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      ),
     );
   }
 }

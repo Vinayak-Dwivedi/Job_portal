@@ -4,11 +4,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
 // Standalone styles to ensure this exact UI remains intact
-class _AppColors {
-  static const primary = Color(0xFF1D4ED8);
-  static const bg = Color(0xFF0A0F1A);
-  static const surface = Color(0xFF151C2A);
-}
+// Removed _AppColors and using dynamic theme.
 
 class EmployerSignupScreen extends StatefulWidget {
   const EmployerSignupScreen({super.key});
@@ -94,12 +90,12 @@ class _EmployerSignupScreenState extends State<EmployerSignupScreen> {
           keyboardType: keyboardType,
           validator: validator,
           maxLines: maxLines,
-          style: const TextStyle(color: Colors.white),
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+            hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 14),
             filled: true,
-            fillColor: _AppColors.surface,
+            fillColor: Theme.of(context).cardColor,
             prefixIcon: prefixWidget,
             suffixIcon: suffixIcon,
             border: OutlineInputBorder(
@@ -119,28 +115,19 @@ class _EmployerSignupScreenState extends State<EmployerSignupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return Scaffold(
-      backgroundColor: _AppColors.bg,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: _AppColors.bg,
+        backgroundColor: theme.scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.blueAccent),
+          icon: Icon(Icons.arrow_back, color: theme.colorScheme.primary),
           onPressed: () => context.pop(),
         ),
-        title: const Text('Establish Profile', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+        title: Text('Establish Profile', style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 18)),
         centerTitle: false,
-        actions: const [
-          Center(
-            child: Padding(
-              padding: EdgeInsets.only(right: 20.0),
-              child: Text(
-                'Step 1 of 4',
-                style: TextStyle(color: Colors.blueAccent, fontWeight: FontWeight.bold, fontSize: 13),
-              ),
-            ),
-          )
-        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -160,8 +147,8 @@ class _EmployerSignupScreenState extends State<EmployerSignupScreen> {
                         height: 80,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: _AppColors.surface,
-                          border: Border.all(color: Colors.grey.withOpacity(0.2), style: BorderStyle.none),
+                          color: theme.cardColor,
+                          border: Border.all(color: theme.colorScheme.onSurface.withOpacity(0.05), style: BorderStyle.none),
                         ),
                         // Dashed inner border effect
                         child: CustomPaint(
@@ -175,9 +162,9 @@ class _EmployerSignupScreenState extends State<EmployerSignupScreen> {
                         width: 24,
                         height: 24,
                         decoration: BoxDecoration(
-                          color: _AppColors.primary,
+                          color: theme.colorScheme.primary,
                           shape: BoxShape.circle,
-                          border: Border.all(color: _AppColors.bg, width: 2),
+                          border: Border.all(color: theme.scaffoldBackgroundColor, width: 2),
                         ),
                         child: const Icon(Icons.edit, color: Colors.white, size: 12),
                       )
@@ -201,12 +188,12 @@ class _EmployerSignupScreenState extends State<EmployerSignupScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                           decoration: BoxDecoration(
-                            border: Border.all(color: _AppColors.primary.withOpacity(0.5)),
+                            border: Border.all(color: theme.colorScheme.primary.withOpacity(0.5)),
                             borderRadius: BorderRadius.circular(6),
                           ),
-                          child: const Text(
+                          child: Text(
                             "Upload Company Logo",
-                            style: TextStyle(color: Colors.blueAccent, fontSize: 11, fontWeight: FontWeight.bold),
+                            style: TextStyle(color: theme.colorScheme.primary, fontSize: 11, fontWeight: FontWeight.bold),
                           ),
                         )
                       ],
@@ -217,7 +204,7 @@ class _EmployerSignupScreenState extends State<EmployerSignupScreen> {
               const SizedBox(height: 36),
 
               // ── Company Details ────────────────────────────────────────
-              _sectionLabel("Company Details", _AppColors.primary),
+              _sectionLabel("Company Details", Theme.of(context).colorScheme.primary),
               const SizedBox(height: 20),
 
               _textField(
@@ -279,15 +266,15 @@ class _EmployerSignupScreenState extends State<EmployerSignupScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 decoration: BoxDecoration(
-                  color: _AppColors.surface,
+                  color: theme.cardColor,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<String>(
                     value: _selectedIndustry,
                     isExpanded: true,
-                    dropdownColor: _AppColors.surface,
-                    icon: const Icon(Icons.keyboard_arrow_down, color: Colors.grey),
+                    dropdownColor: theme.cardColor,
+                    icon: Icon(Icons.keyboard_arrow_down, color: theme.colorScheme.onSurfaceVariant),
                     style: const TextStyle(color: Colors.white, fontSize: 15),
                     items: ['Select Industry', 'Civil Construction', 'IT & Software', 'Manufacturing', 'Retail']
                         .map((String value) {
@@ -316,9 +303,9 @@ class _EmployerSignupScreenState extends State<EmployerSignupScreen> {
                 width: double.infinity,
                 clipBehavior: Clip.antiAlias,
                 decoration: BoxDecoration(
-                  color: _AppColors.surface,
+                  color: theme.cardColor,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white.withOpacity(0.05)),
+                  border: Border.all(color: theme.colorScheme.onSurface.withOpacity(0.05)),
                 ),
                 child: FlutterMap(
                   options: MapOptions(
@@ -360,7 +347,7 @@ class _EmployerSignupScreenState extends State<EmployerSignupScreen> {
                               alignment: Alignment.center,
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
-                                color: _AppColors.primary.withOpacity(0.9),
+                                color: theme.colorScheme.primary.withOpacity(0.9),
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: const Text('Tap map to pin location', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
@@ -386,8 +373,8 @@ class _EmployerSignupScreenState extends State<EmployerSignupScreen> {
       ),
       bottomNavigationBar: Container(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
-        decoration: const BoxDecoration(
-          color: _AppColors.bg,
+        decoration: BoxDecoration(
+          color: theme.scaffoldBackgroundColor,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -398,7 +385,7 @@ class _EmployerSignupScreenState extends State<EmployerSignupScreen> {
               child: ElevatedButton(
                 onPressed: _submitForm,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: _AppColors.primary,
+                  backgroundColor: theme.colorScheme.primary,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   elevation: 0,
                 ),

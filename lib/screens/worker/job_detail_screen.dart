@@ -44,7 +44,7 @@ class _JobDetailScreenState extends ConsumerState<JobDetailScreen> {
     );
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
         children: [
           CustomScrollView(
@@ -53,13 +53,13 @@ class _JobDetailScreenState extends ConsumerState<JobDetailScreen> {
               SliverAppBar(
                 expandedHeight: 120,
                 pinned: true,
-                backgroundColor: const Color(0xFF1D4ED8),
+                backgroundColor: Theme.of(context).colorScheme.primary,
                 flexibleSpace: FlexibleSpaceBar(
                   title: Text(
                     job['company'],
-                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: Colors.white),
+                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: Colors.white),
                   ),
-                  background: Container(color: const Color(0xFF1D4ED8)),
+                  background: Container(color: Theme.of(context).colorScheme.primary),
                 ),
                 leading: IconButton(
                   icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
@@ -92,14 +92,14 @@ class _JobDetailScreenState extends ConsumerState<JobDetailScreen> {
                               children: [
                                 Text(
                                   job['title'],
-                                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Color(0xFF0F172A), letterSpacing: -0.5),
+                                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Theme.of(context).colorScheme.onSurface, letterSpacing: -0.5),
                                 ),
                                 const SizedBox(height: 4),
                                 Row(
                                   children: [
-                                    const Icon(Icons.location_on_rounded, color: Color(0xFF64748B), size: 14),
+                                    Icon(Icons.location_on_rounded, color: Theme.of(context).colorScheme.onSurfaceVariant, size: 14),
                                     const SizedBox(width: 4),
-                                    Text(job['location'], style: const TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
+                                    Text(job['location'], style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontWeight: FontWeight.w600)),
                                   ],
                                 ),
                               ],
@@ -120,15 +120,15 @@ class _JobDetailScreenState extends ConsumerState<JobDetailScreen> {
                       ),
 
                       const SizedBox(height: 40),
-                      const Text('Job Description', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
+                      Text('Job Description', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Theme.of(context).colorScheme.onSurface)),
                       const SizedBox(height: 12),
                       Text(
                         job['description'],
-                        style: const TextStyle(fontSize: 15, color: Color(0xFF475569), height: 1.6),
+                        style: TextStyle(fontSize: 15, color: Theme.of(context).colorScheme.onSurfaceVariant, height: 1.6),
                       ),
 
                       const SizedBox(height: 32),
-                      const Text('Required Skills', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
+                      Text('Required Skills', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Theme.of(context).colorScheme.onSurface)),
                       const SizedBox(height: 12),
                       Wrap(
                         spacing: 8,
@@ -152,9 +152,9 @@ class _JobDetailScreenState extends ConsumerState<JobDetailScreen> {
             child: Container(
               padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).cardColor,
                 boxShadow: [
-                  BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 20, offset: const Offset(0, -5))
+                  BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20, offset: const Offset(0, -5))
                 ],
               ),
               child: Row(
@@ -163,11 +163,11 @@ class _JobDetailScreenState extends ConsumerState<JobDetailScreen> {
                     height: 56,
                     width: 56,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFEFF6FF),
+                      color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(16),
                     ),
-                    child: const IconButton(
-                      icon: Icon(Icons.bookmark_border_rounded, color: Color(0xFF1D4ED8)),
+                    child: IconButton(
+                      icon: Icon(Icons.bookmark_border_rounded, color: Theme.of(context).colorScheme.primary),
                       onPressed: null,
                     ),
                   ),
@@ -178,7 +178,7 @@ class _JobDetailScreenState extends ConsumerState<JobDetailScreen> {
                       child: ElevatedButton(
                         onPressed: _hasApplied || _isApplying ? null : _handleApply,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: _hasApplied ? const Color(0xFF10B981) : const Color(0xFF1D4ED8),
+                          backgroundColor: _hasApplied ? const Color(0xFF10B981) : Theme.of(context).colorScheme.primary,
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                           elevation: 0,
@@ -200,7 +200,7 @@ class _JobDetailScreenState extends ConsumerState<JobDetailScreen> {
           // ── Success Overlay ─────────────────────────
           if (_hasApplied)
             Container(
-              color: Colors.white.withValues(alpha: 0.9),
+              color: Theme.of(context).scaffoldBackgroundColor.withOpacity(0.9),
               child: Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -212,14 +212,14 @@ class _JobDetailScreenState extends ConsumerState<JobDetailScreen> {
                       repeat: false,
                     ),
                     const SizedBox(height: 24),
-                    const Text(
+                    Text(
                       'Application Sent!',
-                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
+                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Theme.of(context).colorScheme.onSurface),
                     ),
                     const SizedBox(height: 8),
-                    const Text(
+                    Text(
                       'The employer has been notified.',
-                      style: TextStyle(color: Color(0xFF64748B), fontSize: 16),
+                      style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 16),
                     ),
                   ],
                 ),
@@ -245,13 +245,13 @@ class _InfoTile extends StatelessWidget {
       children: [
         Container(
           padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(color: color.withValues(alpha: 0.1), shape: BoxShape.circle),
+          decoration: BoxDecoration(color: color.withOpacity(0.1), shape: BoxShape.circle),
           child: Icon(icon, color: color, size: 20),
         ),
         const SizedBox(height: 8),
-        Text(label, style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8), fontWeight: FontWeight.w800, letterSpacing: 0.5)),
+        Text(label, style: TextStyle(fontSize: 10, color: Theme.of(context).colorScheme.onSurfaceVariant, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
         const SizedBox(height: 2),
-        Text(value, style: const TextStyle(fontSize: 14, color: Color(0xFF0F172A), fontWeight: FontWeight.w700)),
+        Text(value, style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w700)),
       ],
     );
   }
@@ -266,13 +266,13 @@ class _SkillChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFFF1F5F9),
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.2)),
       ),
       child: Text(
         skill,
-        style: const TextStyle(color: Color(0xFF475569), fontWeight: FontWeight.w700, fontSize: 13),
+        style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w700, fontSize: 13),
       ),
     );
   }

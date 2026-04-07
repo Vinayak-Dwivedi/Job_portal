@@ -27,6 +27,10 @@ class PostService {
     String? location,
     String? profilePhotoUrl,
     required bool isVerified,
+    bool isJobPost = false,
+    String? jobTitle,
+    String? jobSalary,
+    String? companyName,
   }) async {
     String? imageUrl;
 
@@ -44,6 +48,10 @@ class PostService {
       'location': location ?? "",
       'profilePhotoUrl': profilePhotoUrl ?? "",
       'isVerified': isVerified,
+      'isJobPost': isJobPost,
+      if (jobTitle != null) 'jobTitle': jobTitle,
+      if (jobSalary != null) 'jobSalary': jobSalary,
+      if (companyName != null) 'companyName': companyName,
       'likes': 0,
       'comments': 0,
       'createdAt': FieldValue.serverTimestamp(),

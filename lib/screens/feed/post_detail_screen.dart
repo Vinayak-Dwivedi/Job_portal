@@ -9,13 +9,15 @@ class PostDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF1F5F9),
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 1,
-        iconTheme: const IconThemeData(color: Colors.black),
-        title: const Text('Post', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+        backgroundColor: theme.scaffoldBackgroundColor,
+        elevation: 0,
+        iconTheme: IconThemeData(color: theme.colorScheme.onSurface),
+        title: Text('Post', style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.bold)),
       ),
       body: FutureBuilder<Map<String, dynamic>?>(
         future: PostService.getPost(postId),
@@ -29,8 +31,8 @@ class PostDetailScreen extends StatelessWidget {
           
           final post = snapshot.data;
           if (post == null) {
-            return const Center(
-              child: Text('Post not found', style: TextStyle(color: Colors.grey, fontSize: 16)),
+            return Center(
+              child: Text('Post not found', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 16)),
             );
           }
 

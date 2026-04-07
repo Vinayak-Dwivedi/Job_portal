@@ -72,35 +72,51 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
   }
 
   InputDecoration input(String label) {
+    final theme = Theme.of(context);
     return InputDecoration(
       labelText: label,
       filled: true,
-      fillColor: Colors.grey[200],
+      fillColor: theme.cardColor,
+      labelStyle: TextStyle(color: theme.colorScheme.onSurfaceVariant),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide.none,
+        borderSide: BorderSide(color: theme.colorScheme.outline.withOpacity(0.2)),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: theme.colorScheme.outline.withOpacity(0.2)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: theme.colorScheme.primary, width: 2),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text("New Job Post", style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text("New Job Post", style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
         elevation: 0,
         backgroundColor: Colors.transparent,
-        foregroundColor: Colors.black,
+        foregroundColor: theme.colorScheme.onSurface,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: theme.colorScheme.onSurface),
+          onPressed: () => Navigator.pop(context),
+        ),
         actions: [
           TextButton(
             onPressed: isLoading ? null : _postJob,
             child: isLoading
-                ? const SizedBox(
+                ? SizedBox(
                     width: 20,
                     height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                    child: CircularProgressIndicator(strokeWidth: 2, color: theme.colorScheme.primary),
                   )
-                : const Text("Post", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                : Text("Post", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: theme.colorScheme.primary)),
           )
         ],
       ),
@@ -114,6 +130,7 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
               TextFormField(
                 controller: titleController,
                 decoration: input("Job Title"),
+                style: TextStyle(color: theme.colorScheme.onSurface),
                 validator: (v) => v!.isEmpty ? "Required" : null,
               ),
               const SizedBox(height: 16),
@@ -147,7 +164,7 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
                     items: categories.map((cat) {
                       return DropdownMenuItem(
                         value: cat,
-                        child: Text(cat),
+                        child: Text(cat, style: TextStyle(color: theme.colorScheme.onSurface)),
                       );
                     }).toList(),
                     onChanged: (v) {
@@ -156,8 +173,8 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
                       });
                     },
                     validator: (v) => v == null ? "Required" : null,
-                    icon: const Icon(Icons.keyboard_arrow_down_rounded),
-                    dropdownColor: Colors.white,
+                    icon: Icon(Icons.keyboard_arrow_down_rounded, color: theme.colorScheme.primary),
+                    dropdownColor: theme.cardColor,
                     borderRadius: BorderRadius.circular(12),
                   );
                 },
@@ -168,6 +185,7 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
                 controller: descriptionController,
                 maxLines: 4,
                 decoration: input("Job Description"),
+                style: TextStyle(color: theme.colorScheme.onSurface),
                 validator: (v) => v!.isEmpty ? "Required" : null,
               ),
               const SizedBox(height: 16),
@@ -179,6 +197,7 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
                       controller: wageController,
                       keyboardType: TextInputType.number,
                       decoration: input("Daily Wage ₹"),
+                      style: TextStyle(color: theme.colorScheme.onSurface),
                       validator: (v) => v!.isEmpty ? "Required" : null,
                     ),
                   ),
@@ -188,6 +207,7 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
                       controller: durationController,
                       keyboardType: TextInputType.number,
                       decoration: input("Duration (Days)"),
+                      style: TextStyle(color: theme.colorScheme.onSurface),
                       validator: (v) => v!.isEmpty ? "Required" : null,
                     ),
                   ),
@@ -199,6 +219,7 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
                 controller: workersController,
                 keyboardType: TextInputType.number,
                 decoration: input("Workers Needed"),
+                style: TextStyle(color: theme.colorScheme.onSurface),
                 validator: (v) => v!.isEmpty ? "Required" : null,
               ),
               const SizedBox(height: 16),
@@ -206,6 +227,7 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
               TextFormField(
                 controller: locationController,
                 decoration: input("Location"),
+                style: TextStyle(color: theme.colorScheme.onSurface),
                 validator: (v) => v!.isEmpty ? "Required" : null,
               ),
 
@@ -218,7 +240,7 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  backgroundColor: const Color(0xFF1D4ED8),
+                  backgroundColor: theme.colorScheme.primary,
                   foregroundColor: Colors.white,
                 ),
                 child: isLoading
@@ -231,4 +253,4 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
       ),
     );
   }
-}
+}

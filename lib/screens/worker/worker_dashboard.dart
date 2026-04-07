@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../providers/worker_provider.dart';
-import '../../core/demo_data.dart';
+import '../../providers/post_provider.dart';
+import 'package:timeago/timeago.dart' as timeago;
 
 import '../../providers/auth_provider.dart';
 
@@ -29,19 +31,11 @@ class _WorkerHomeFeedState extends ConsumerState<WorkerHomeFeed> {
   @override
   Widget build(BuildContext context) {
     final worker = ref.watch(workerProvider);
-    final primarySkill = worker?.skills.isNotEmpty == true ? worker!.skills.first : '';
-
-    const allJobs = DemoData.sampleJobs;
-
-    // Recommendation logic: match by skill
-    final recommendedJobs = allJobs.where((job) {
-      if (primarySkill.isEmpty) return true;
-      final jobSkills = (job['skillsRequired'] as List<String>).map((s) => s.toLowerCase()).toList();
-      return jobSkills.any((s) => s.contains(primarySkill.toLowerCase()) || primarySkill.toLowerCase().contains(s));
-    }).toList();
+    final jobsAsyncValue = ref.watch(jobFeedProvider);
+    final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0B1120), // Dark theme base
+      backgroundColor: theme.scaffoldBackgroundColor, 
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(70),
         child: AppBar(
@@ -58,13 +52,13 @@ class _WorkerHomeFeedState extends ConsumerState<WorkerHomeFeed> {
                     height: 40,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(color: const Color(0xFF1E293B), width: 1.5),
+                      border: Border.all(color: theme.colorScheme.outline, width: 1.5),
                     ),
                     child: const Icon(Icons.lightbulb_outline_rounded, color: Color(0xFFFBBF24), size: 20),
                   ),
                   const SizedBox(width: 12),
-                  const Expanded(
-                    child: Text('KI Job Portal', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800, letterSpacing: -0.5)),
+                  Expanded(
+                    child: Text('KI Job Portal', style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 16, fontWeight: FontWeight.w800, letterSpacing: -0.5)),
                   ),
                   const IconButton(icon: Icon(Icons.notifications_none_rounded, color: Color(0xFF2563EB), size: 26), onPressed: null),
                   const SizedBox(width: 4),
@@ -78,9 +72,9 @@ class _WorkerHomeFeedState extends ConsumerState<WorkerHomeFeed> {
                       ),
                       child: CircleAvatar(
                         radius: 16,
-                        backgroundColor: const Color(0xFF1E293B),
+                        backgroundColor: theme.colorScheme.outline,
                         backgroundImage: worker?.localImageFile != null ? FileImage(worker!.localImageFile!) : null,
-                        child: worker?.localImageFile == null ? const Icon(Icons.person, color: Color(0xFF94A3B8), size: 18) : null,
+                        child: worker?.localImageFile == null ? Icon(Icons.person, color: theme.colorScheme.onSurfaceVariant, size: 18) : null,
                       ),
                     ),
                   ),
@@ -93,7 +87,7 @@ class _WorkerHomeFeedState extends ConsumerState<WorkerHomeFeed> {
       body: RefreshIndicator(
         onRefresh: () async => await Future.delayed(const Duration(seconds: 1)),
         color: const Color(0xFF2563EB),
-        backgroundColor: const Color(0xFF1E293B),
+        backgroundColor: theme.cardColor,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           child: Column(
@@ -107,12 +101,12 @@ class _WorkerHomeFeedState extends ConsumerState<WorkerHomeFeed> {
                   children: [
                     Text(
                       'Good Morning, ${worker?.name.split(' ')[0] ?? 'Karigar'}',
-                      style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: -0.5),
+                      style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: -0.5),
                     ),
                     const SizedBox(height: 6),
-                    const Text(
+                    Text(
                       'Ready for your next masterpiece?',
-                      style: TextStyle(color: Color(0xFF94A3B8), fontSize: 14, fontWeight: FontWeight.w500),
+                      style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 14, fontWeight: FontWeight.w500),
                     ),
                   ],
                 ),
@@ -128,6 +122,7 @@ class _WorkerHomeFeedState extends ConsumerState<WorkerHomeFeed> {
                         value: '08',
                         label: 'ACTIVE\nJOBS',
                         color: const Color(0xFF60A5FA),
+                        theme: theme,
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -136,6 +131,7 @@ class _WorkerHomeFeedState extends ConsumerState<WorkerHomeFeed> {
                         value: '${worker?.credits ?? 142}',
                         label: 'CREDITS\nLEFT',
                         color: const Color(0xFFFBBF24),
+                        theme: theme,
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -144,22 +140,21 @@ class _WorkerHomeFeedState extends ConsumerState<WorkerHomeFeed> {
                         value: '92%',
                         label: 'PROFILE\nSTRENGTH',
                         color: const Color(0xFF34D399),
+                        theme: theme,
                       ),
                     ),
                   ],
                 ),
               ),
 
-              // ── Promo Banner ──────────────────────────────
               Padding(
                 padding: const EdgeInsets.all(20.0),
                 child: Container(
-                  height: 120,
                   width: double.infinity,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(16),
-                    gradient: LinearGradient(
-                      colors: [const Color(0xFF1E1B4B), const Color(0xFF0F172A)],
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF1E1B4B), Color(0xFF0F172A)],
                       begin: Alignment.centerLeft,
                       end: Alignment.centerRight,
                     ),
@@ -211,8 +206,8 @@ class _WorkerHomeFeedState extends ConsumerState<WorkerHomeFeed> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Recommended Jobs', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800)),
-                    Text('View All', style: TextStyle(color: const Color(0xFF60A5FA), fontSize: 13, fontWeight: FontWeight.w700)),
+                    Text('Recommended Jobs', style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 16, fontWeight: FontWeight.w800)),
+                    const Text('View All', style: TextStyle(color: Color(0xFF60A5FA), fontSize: 13, fontWeight: FontWeight.w700)),
                   ],
                 ),
               ),
@@ -222,26 +217,38 @@ class _WorkerHomeFeedState extends ConsumerState<WorkerHomeFeed> {
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Row(
                   children: [
-                    _FilterChip(label: 'All Trades', isSelected: true),
+                    _FilterChip(label: 'All Trades', isSelected: true, theme: theme),
                     const SizedBox(width: 8),
-                    _FilterChip(label: 'Plumbing'),
+                    _FilterChip(label: 'Plumbing', theme: theme),
                     const SizedBox(width: 8),
-                    _FilterChip(label: 'Electrical'),
+                    _FilterChip(label: 'Electrical', theme: theme),
                   ],
                 ),
               ),
               const SizedBox(height: 16),
 
               // ── Jobs List ──────────────────────────
-              ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                itemCount: recommendedJobs.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 16),
-                itemBuilder: (context, index) {
-                  return _DarkJobCard(job: recommendedJobs[index]);
+              jobsAsyncValue.when(
+                data: (jobs) {
+                  if (jobs.isEmpty) {
+                    return Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: Text('No job postings available.', style: TextStyle(color: theme.colorScheme.onSurfaceVariant)),
+                    );
+                  }
+                  return ListView.separated(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    itemCount: jobs.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 16),
+                    itemBuilder: (context, index) {
+                      return _DarkJobCard(job: jobs[index], theme: theme);
+                    },
+                  );
                 },
+                loading: () => const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator())),
+                error: (err, stack) => Center(child: Text('Error: $err', style: const TextStyle(color: Colors.red))),
               ),
               const SizedBox(height: 100),
             ],
@@ -255,21 +262,22 @@ class _WorkerHomeFeedState extends ConsumerState<WorkerHomeFeed> {
 class _FilterChip extends StatelessWidget {
   final String label;
   final bool isSelected;
-  const _FilterChip({required this.label, this.isSelected = false});
+  final ThemeData theme;
+  const _FilterChip({required this.label, this.isSelected = false, required this.theme});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: isSelected ? const Color(0xFF2563EB) : const Color(0xFF151C2B),
+        color: isSelected ? const Color(0xFF2563EB) : theme.cardColor,
         borderRadius: BorderRadius.circular(20),
-        border: isSelected ? null : Border.all(color: const Color(0xFF1E293B)),
+        border: isSelected ? null : Border.all(color: theme.colorScheme.outline),
       ),
       child: Text(
         label,
         style: TextStyle(
-          color: isSelected ? Colors.white : const Color(0xFF94A3B8),
+          color: isSelected ? Colors.white : theme.colorScheme.onSurfaceVariant,
           fontSize: 12,
           fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
         ),
@@ -282,23 +290,24 @@ class _StatCard extends StatelessWidget {
   final String value;
   final String label;
   final Color color;
-  const _StatCard({required this.value, required this.label, required this.color});
+  final ThemeData theme;
+  const _StatCard({required this.value, required this.label, required this.color, required this.theme});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFF151C2B),
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF1E293B)),
+        border: Border.all(color: theme.colorScheme.outline),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(value, style: TextStyle(color: color, fontWeight: FontWeight.w900, fontSize: 24)),
           const SizedBox(height: 8),
-          Text(label, style: const TextStyle(color: Color(0xFF64748B), fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: 1.0, height: 1.3)),
+          Text(label, style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: 1.0, height: 1.3)),
         ],
       ),
     );
@@ -307,20 +316,33 @@ class _StatCard extends StatelessWidget {
 
 class _DarkJobCard extends StatelessWidget {
   final Map<String, dynamic> job;
-  const _DarkJobCard({required this.job});
+  final ThemeData theme;
+  const _DarkJobCard({required this.job, required this.theme});
 
   @override
   Widget build(BuildContext context) {
-    // Just a fun mock tag for UI visual exactly like image
-    final bool isVerified = job['company'].toString().toLowerCase().contains('society');
-    final bool isHighPay = job['company'].toString().toLowerCase().contains('kitchen');
+    final bool isVerified = job['isVerified'] == true;
+    final String title = job['jobTitle']?.toString() ?? 'Job Posting';
+    final String company = job['companyName']?.toString() ?? 'Unknown Company';
+    final String location = job['location']?.toString() ?? '';
+    final String salary = job['jobSalary']?.toString() ?? 'Negotiable';
+    final createdAt = job['createdAt'];
+    
+    String postedTime = 'Just now';
+    if (createdAt != null) {
+      if (createdAt is Timestamp) {
+        postedTime = timeago.format(createdAt.toDate());
+      }
+    }
+
+    String profileUrl = job['profilePhotoUrl']?.toString() ?? '';
 
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFF151C2B),
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFF1E293B)),
+        border: Border.all(color: theme.colorScheme.outline),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -329,79 +351,114 @@ class _DarkJobCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                width: 44,
-                height: 44,
+                width: 48,
+                height: 48,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E293B),
+                  color: theme.colorScheme.surfaceVariant,
                   borderRadius: BorderRadius.circular(12),
+                  image: profileUrl.isNotEmpty ? DecorationImage(image: NetworkImage(profileUrl), fit: BoxFit.cover) : null,
                 ),
-                child: Icon(Icons.water_drop_rounded, color: const Color(0xFF60A5FA), size: 24),
+                child: profileUrl.isEmpty ? Icon(Icons.business, color: theme.colorScheme.onSurfaceVariant, size: 24) : null,
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      job['title'],
-                      style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: Colors.white, letterSpacing: -0.5),
-                      maxLines: 2,
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            title,
+                            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: theme.colorScheme.onSurface, letterSpacing: -0.5),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (isVerified)
+                          Container(
+                            margin: const EdgeInsets.only(left: 6),
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF064E3B).withOpacity(0.5),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Row(
+                              children: const [
+                                Icon(Icons.check_circle, size: 10, color: Color(0xFF34D399)),
+                                SizedBox(width: 3),
+                                Text('VERIFIED', style: TextStyle(color: Color(0xFF34D399), fontSize: 8, fontWeight: FontWeight.w900)),
+                              ],
+                            ),
+                          ),
+                        const SizedBox(width: 8),
+                        Icon(Icons.bookmark_border_rounded, color: theme.colorScheme.onSurfaceVariant, size: 20),
+                      ],
                     ),
                     const SizedBox(height: 4),
-                    Text('Posted 2 hours ago • ${job['location'].split(',')[0]}', style: const TextStyle(color: Color(0xFF64748B), fontSize: 11, fontWeight: FontWeight.w500)),
+                    Text(
+                      '$company • $location',
+                      style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 13, fontStyle: FontStyle.italic, fontWeight: FontWeight.w500),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ],
                 ),
               ),
-              if (isHighPay)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF064E3B).withOpacity(0.5),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: const Text('HIGH\nPAY', style: TextStyle(color: Color(0xFF34D399), fontSize: 8, fontWeight: FontWeight.w900, height: 1.2), textAlign: TextAlign.center),
-                )
-              else if (isVerified)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1E3A8A).withOpacity(0.5),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: const Text('VERIFIED', style: TextStyle(color: Color(0xFF60A5FA), fontSize: 8, fontWeight: FontWeight.w900, height: 1.2)),
-                )
             ],
           ),
-          const SizedBox(height: 16),
-          const Text(
-            'Looking for a master plumber for a premium modular kitchen setup. Must have experience with Hansgrohe fittings.',
-            style: TextStyle(color: Color(0xFF94A3B8), fontSize: 13, height: 1.5, fontWeight: FontWeight.w500),
+          const SizedBox(height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('SALARY / RATE', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
+                  const SizedBox(height: 2),
+                  Text(salary, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: Color(0xFF60A5FA))),
+                ],
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text('POSTED', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
+                  const SizedBox(height: 2),
+                  Text(postedTime, style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 13, fontWeight: FontWeight.w500)),
+                ],
+              ),
+            ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
           Row(
             children: [
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('EST. BUDGET', style: TextStyle(color: Color(0xFF64748B), fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
-                    const SizedBox(height: 2),
-                    Text(job['salaryRange'], style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: Color(0xFF60A5FA))),
-                  ],
+                child: SizedBox(
+                  height: 46,
+                  child: ElevatedButton(
+                    onPressed: () {},
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF2563EB),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      elevation: 0,
+                    ),
+                    child: const Text('Apply Now', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
+                  ),
                 ),
               ),
-              SizedBox(
-                width: 110,
-                height: 42,
-                child: ElevatedButton(
-                  onPressed: () => context.push('/job/${job['id']}'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: isVerified ? const Color(0xFF1E293B) : const Color(0xFF2563EB),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    elevation: 0,
-                  ),
-                  child: Text(isVerified ? 'Apply Now' : 'Apply Now', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12, color: Colors.white)),
+              const SizedBox(width: 12),
+              Container(
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
+                  color: theme.cardColor,
+                  border: Border.all(color: theme.colorScheme.outline),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: IconButton(
+                  onPressed: () {},
+                  icon: Icon(Icons.share_rounded, color: theme.colorScheme.onSurface, size: 20),
                 ),
               ),
             ],

@@ -64,7 +64,7 @@ class _WorkerShellState extends ConsumerState<WorkerShell> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0B1120),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: widget.child,
       bottomNavigationBar: KIBottomNavBar(currentIndex: widget.currentIndex),
     );
@@ -96,7 +96,7 @@ class _EmployerShellState extends ConsumerState<EmployerShell> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0B1120),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: widget.child,
       bottomNavigationBar: KIBottomNavBar(currentIndex: widget.currentIndex),
     );
@@ -142,6 +142,8 @@ final routerProvider = Provider<GoRouter>((ref) {
               skill: extra['skill'] ?? '',
               experience: extra['experience'] ?? '',
               location: extra['location'] ?? '',
+              latitude: extra['latitude'] ?? '0',
+              longitude: extra['longitude'] ?? '0',
             ),
           );
         },

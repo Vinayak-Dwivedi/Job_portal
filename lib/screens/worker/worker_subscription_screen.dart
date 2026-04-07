@@ -17,15 +17,16 @@ class _WorkerSubscriptionScreenState extends ConsumerState<WorkerSubscriptionScr
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: const Color(0xFFF1F5F9),
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        backgroundColor: Colors.white,
+        backgroundColor: theme.cardColor,
         elevation: 0,
-        title: const Text(
+        title: Text(
           'Unlock More Opportunities',
-          style: TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.bold, fontSize: 17),
+          style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 17),
         ),
       ),
       body: SingleChildScrollView(
@@ -39,7 +40,11 @@ class _WorkerSubscriptionScreenState extends ConsumerState<WorkerSubscriptionScr
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(colors: [Color(0xFF1D4ED8), Color(0xFF1E40AF)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+                  gradient: LinearGradient(
+                    colors: [theme.colorScheme.primary, theme.colorScheme.primary.withOpacity(0.8)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Column(
@@ -50,15 +55,15 @@ class _WorkerSubscriptionScreenState extends ConsumerState<WorkerSubscriptionScr
                       children: [
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(6)),
+                          decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(6)),
                           child: const Text('FREE PLAN', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1)),
                         ),
                         const Icon(Icons.auto_awesome, color: Colors.white70, size: 20),
                       ],
                     ),
                     const SizedBox(height: 14),
-                    const Text('${_totalContacts - _usedContacts} contacts remaining',
-                        style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                    Text('${_totalContacts - _usedContacts} contacts remaining',
+                        style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 4),
                     const Text('Upgrade to get unlimited contacts', style: TextStyle(color: Colors.white70, fontSize: 13)),
                     const SizedBox(height: 16),
@@ -66,7 +71,7 @@ class _WorkerSubscriptionScreenState extends ConsumerState<WorkerSubscriptionScr
                       borderRadius: BorderRadius.circular(8),
                       child: LinearProgressIndicator(
                         value: _usedContacts / _totalContacts,
-                        backgroundColor: Colors.white.withValues(alpha: 0.25),
+                        backgroundColor: Colors.white.withOpacity(0.25),
                         valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF4ADE80)),
                         minHeight: 7,
                       ),
@@ -85,9 +90,9 @@ class _WorkerSubscriptionScreenState extends ConsumerState<WorkerSubscriptionScr
               child: Container(
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: theme.cardColor,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                  border: Border.all(color: theme.colorScheme.outline.withOpacity(0.2)),
                 ),
                 child: Row(
                   children: [
@@ -116,26 +121,26 @@ class _WorkerSubscriptionScreenState extends ConsumerState<WorkerSubscriptionScr
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 16),
               padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
-              child: const Column(
+              decoration: BoxDecoration(color: theme.cardColor, borderRadius: BorderRadius.circular(16)),
+              child: Column(
                 children: [
-                  Text('SECURE PAYMENTS', style: TextStyle(color: Color(0xFF1D4ED8), fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 1)),
-                  SizedBox(height: 16),
+                  Text('SECURE PAYMENTS', style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 1)),
+                  const SizedBox(height: 16),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.credit_card, color: Color(0xFF64748B), size: 32),
-                      SizedBox(width: 16),
-                      Icon(Icons.payment, color: Color(0xFF64748B), size: 32),
-                      SizedBox(width: 16),
-                      Icon(Icons.account_balance, color: Color(0xFF64748B), size: 32),
+                      Icon(Icons.credit_card, color: theme.colorScheme.onSurfaceVariant, size: 32),
+                      const SizedBox(width: 16),
+                      Icon(Icons.payment, color: theme.colorScheme.onSurfaceVariant, size: 32),
+                      const SizedBox(width: 16),
+                      Icon(Icons.account_balance, color: theme.colorScheme.onSurfaceVariant, size: 32),
                     ],
                   ),
-                  SizedBox(height: 14),
-                  Text('Cancel anytime. No hidden charges.', style: TextStyle(color: Color(0xFF64748B), fontSize: 13), textAlign: TextAlign.center),
-                  SizedBox(height: 12),
+                  const SizedBox(height: 14),
+                  Text('Cancel anytime. No hidden charges.', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 13), textAlign: TextAlign.center),
+                  const SizedBox(height: 12),
                   Text('© 2024 KI Marketplace. Secure payments via encrypted gateways.',
-                      style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11), textAlign: TextAlign.center),
+                      style: TextStyle(color: theme.colorScheme.onSurfaceVariant.withOpacity(0.7), fontSize: 11), textAlign: TextAlign.center),
                 ],
               ),
             ),
@@ -155,6 +160,7 @@ class _TabBtn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final active = current == index;
     return GestureDetector(
       onTap: () => onTap(index),
@@ -162,11 +168,11 @@ class _TabBtn extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
-          color: active ? const Color(0xFF1D4ED8) : Colors.transparent,
+          color: active ? theme.colorScheme.primary : Colors.transparent,
           borderRadius: BorderRadius.circular(9),
         ),
         alignment: Alignment.center,
-        child: Text(label, style: TextStyle(color: active ? Colors.white : const Color(0xFF64748B), fontWeight: active ? FontWeight.bold : FontWeight.normal, fontSize: 13)),
+        child: Text(label, style: TextStyle(color: active ? Colors.white : theme.colorScheme.onSurfaceVariant, fontWeight: active ? FontWeight.bold : FontWeight.normal, fontSize: 13)),
       ),
     );
   }
@@ -183,6 +189,7 @@ class _PlanCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Stack(
       clipBehavior: Clip.none,
       children: [
@@ -192,24 +199,24 @@ class _PlanCard extends StatelessWidget {
             margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: theme.cardColor,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: highlighted ? const Color(0xFF1D4ED8) : const Color(0xFFE2E8F0), width: highlighted ? 2 : 1),
-              boxShadow: highlighted ? [BoxShadow(color: const Color(0xFF1D4ED8).withValues(alpha: 0.1), blurRadius: 16, offset: const Offset(0, 4))] : [],
+              border: Border.all(color: highlighted ? theme.colorScheme.primary : theme.colorScheme.outline.withOpacity(0.2), width: highlighted ? 2 : 1),
+              boxShadow: highlighted ? [BoxShadow(color: theme.colorScheme.primary.withOpacity(0.1), blurRadius: 16, offset: const Offset(0, 4))] : [],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(6)),
-                  child: Text(badge, style: const TextStyle(color: Color(0xFF475569), fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                  decoration: BoxDecoration(color: theme.scaffoldBackgroundColor, borderRadius: BorderRadius.circular(6)),
+                  child: Text(badge, style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
                 ),
                 const SizedBox(height: 12),
                 RichText(
                   text: TextSpan(children: [
-                    TextSpan(text: price, style: const TextStyle(color: Color(0xFF0F172A), fontSize: 28, fontWeight: FontWeight.bold)),
-                    TextSpan(text: period, style: const TextStyle(color: Color(0xFF64748B), fontSize: 14)),
+                    TextSpan(text: price, style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 28, fontWeight: FontWeight.bold)),
+                    TextSpan(text: period, style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 14)),
                   ]),
                 ),
                 const SizedBox(height: 14),
@@ -217,10 +224,10 @@ class _PlanCard extends StatelessWidget {
                   padding: const EdgeInsets.only(bottom: 8),
                   child: Row(
                     children: [
-                      Container(width: 18, height: 18, decoration: const BoxDecoration(color: Color(0xFF1D4ED8), shape: BoxShape.circle),
+                      Container(width: 18, height: 18, decoration: BoxDecoration(color: theme.colorScheme.primary, shape: BoxShape.circle),
                           child: const Icon(Icons.check, color: Colors.white, size: 12)),
                       const SizedBox(width: 8),
-                      Text(f, style: const TextStyle(color: Color(0xFF0F172A), fontSize: 14)),
+                      Text(f, style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 14)),
                     ],
                   ),
                 )),
@@ -230,12 +237,12 @@ class _PlanCard extends StatelessWidget {
                   child: highlighted
                       ? ElevatedButton(
                           onPressed: () => onSelect(planKey),
-                          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1D4ED8), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)), elevation: 0),
+                          style: ElevatedButton.styleFrom(backgroundColor: theme.colorScheme.primary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)), elevation: 0),
                           child: const Text('Choose Plan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                         )
                       : OutlinedButton(
                           onPressed: () => onSelect(planKey),
-                          style: OutlinedButton.styleFrom(foregroundColor: const Color(0xFF1D4ED8), side: const BorderSide(color: Color(0xFF1D4ED8)), padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                          style: OutlinedButton.styleFrom(foregroundColor: theme.colorScheme.primary, side: BorderSide(color: theme.colorScheme.primary), padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
                           child: const Text('Choose Plan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                         ),
                 ),
@@ -263,29 +270,30 @@ class _CreditPack extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: const Color(0xFFE2E8F0))),
+      decoration: BoxDecoration(color: theme.cardColor, borderRadius: BorderRadius.circular(14), border: Border.all(color: theme.colorScheme.outline.withOpacity(0.2))),
       child: Row(
         children: [
-          Container(width: 48, height: 48, decoration: BoxDecoration(color: const Color(0xFFEFF6FF), borderRadius: BorderRadius.circular(12)),
-              child: const Icon(Icons.bolt, color: Color(0xFF1D4ED8), size: 28)),
+          Container(width: 48, height: 48, decoration: BoxDecoration(color: theme.colorScheme.primary.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+              child: Icon(Icons.bolt, color: theme.colorScheme.primary, size: 28)),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('$amount Credits', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF0F172A))),
+                Text('$amount Credits', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: theme.colorScheme.onSurface)),
                 if (bonus.isNotEmpty) Text(bonus, style: const TextStyle(color: Color(0xFF059669), fontSize: 12, fontWeight: FontWeight.bold)),
               ],
             ),
           ),
-          Text(price, style: const TextStyle(color: Color(0xFF1D4ED8), fontWeight: FontWeight.bold, fontSize: 18)),
+          Text(price, style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 18)),
           const SizedBox(width: 12),
           ElevatedButton(
             onPressed: () {},
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1D4ED8), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)), elevation: 0),
+            style: ElevatedButton.styleFrom(backgroundColor: theme.colorScheme.primary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)), elevation: 0),
             child: const Text('Buy', style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],

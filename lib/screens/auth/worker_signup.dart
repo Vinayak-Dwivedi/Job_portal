@@ -3,13 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-// ─── Minimal stand-ins so the file compiles without the real imports ──────────
-// Remove these and import your actual files in your project.
-class AppColors {
-  static const primary = Color(0xFF2563EB);
-  static const surface = Color(0xFF1E293B);
-  static const bg = Color(0xFF0F172A);
-}
+import '../../core/theme/app_colors.dart';
+import '../../widgets/common/ki_bottom_nav_bar.dart'; // Just in case it's needed, but actually this screen should just use the theme.
 
 class PrimaryButton extends StatelessWidget {
   final String label;
@@ -24,7 +19,7 @@ class PrimaryButton extends StatelessWidget {
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
+          backgroundColor: Theme.of(context).colorScheme.primary,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         ),
         child: Row(
@@ -132,8 +127,8 @@ Future<void> fetchSkills() async {
         ),
         const SizedBox(width: 10),
         Text(text,
-            style: const TextStyle(
-                color: Colors.white,
+            style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface,
                 fontWeight: FontWeight.bold,
                 fontSize: 16)),
       ],
@@ -159,12 +154,12 @@ Future<void> fetchSkills() async {
           controller: controller,
           keyboardType: keyboardType,
           validator: validator,
-          style: const TextStyle(color: Colors.white),
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: TextStyle(color: Colors.grey.shade600),
+            hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
             filled: true,
-            fillColor: AppColors.surface,
+            fillColor: Theme.of(context).cardColor,
             prefixIcon: prefixWidget,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -184,13 +179,15 @@ Future<void> fetchSkills() async {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: Icon(Icons.arrow_back, color: theme.colorScheme.onSurface),
           onPressed: () => context.pop(),
         ),
         // ── Step indicator ──────────────────────────────────────────────
@@ -205,17 +202,17 @@ Future<void> fetchSkills() async {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // ── Heading ────────────────────────────────────────────────
-              const Text(
+              Text(
                 "Create Your Profile",
                 style: TextStyle(
                     fontSize: 26,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white),
+                    color: theme.colorScheme.onSurface),
               ),
               const SizedBox(height: 6),
-              const Text(
+              Text(
                 "Tell us about your professional expertise and basic details to get started.",
-                style: TextStyle(color: Colors.grey, fontSize: 13),
+                style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 13),
               ),
               const SizedBox(height: 24),
 
@@ -250,13 +247,13 @@ Future<void> fetchSkills() async {
                         height: 54,
                         padding: const EdgeInsets.symmetric(horizontal: 14),
                         decoration: BoxDecoration(
-                          color: AppColors.surface,
+                          color: theme.cardColor,
                           borderRadius: BorderRadius.circular(12),
                         ),
                         alignment: Alignment.center,
-                        child: const Text("+91",
+                        child: Text("+91",
                             style: TextStyle(
-                                color: Colors.white,
+                                color: theme.colorScheme.onSurface,
                                 fontWeight: FontWeight.w600,
                                 fontSize: 15)),
                       ),
@@ -265,7 +262,7 @@ Future<void> fetchSkills() async {
                         child: TextFormField(
                           controller: _phoneController,
                           keyboardType: TextInputType.phone,
-                          style: const TextStyle(color: Colors.white),
+                          style: TextStyle(color: theme.colorScheme.onSurface),
                           validator: (v) {
                             if (v == null || v.isEmpty) {
                               return "Mobile number is required";
@@ -277,9 +274,9 @@ Future<void> fetchSkills() async {
                           },
                           decoration: InputDecoration(
                             hintText: "98765 43210",
-                            hintStyle: TextStyle(color: Colors.grey.shade600),
+                            hintStyle: TextStyle(color: theme.colorScheme.onSurfaceVariant),
                             filled: true,
-                            fillColor: AppColors.surface,
+                            fillColor: theme.cardColor,
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide.none,
@@ -319,7 +316,7 @@ Future<void> fetchSkills() async {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: theme.cardColor,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: DropdownButtonHideUnderline(
@@ -364,7 +361,7 @@ Future<void> fetchSkills() async {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: theme.cardColor,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
@@ -383,10 +380,10 @@ Future<void> fetchSkills() async {
                         children: [
                           Text(
                             _experience.toString().padLeft(2, '0'),
-                            style: const TextStyle(
+                            style: TextStyle(
                                 fontSize: 26,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.white),
+                                color: theme.colorScheme.onSurface),
                           ),
                           const Text("YEARS",
                               style:
@@ -429,14 +426,14 @@ Future<void> fetchSkills() async {
                 child: GestureDetector(
                   onTap: () => context.push('/login'),
                   child: RichText(
-                    text: const TextSpan(
+                    text: TextSpan(
                       text: "Already have an account? ",
-                      style: TextStyle(color: Colors.grey, fontSize: 13),
+                      style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 13),
                       children: [
                         TextSpan(
                           text: "Log In",
                           style: TextStyle(
-                              color: Colors.white,
+                              color: theme.colorScheme.onSurface,
                               fontWeight: FontWeight.bold),
                         ),
                       ],
@@ -461,6 +458,7 @@ class _StepIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: List.generate(total, (i) {
@@ -472,7 +470,7 @@ class _StepIndicator extends StatelessWidget {
           height: 8,
           decoration: BoxDecoration(
             color:
-                active ? AppColors.primary : Colors.grey.withOpacity(0.4),
+                active ? theme.colorScheme.primary : theme.colorScheme.onSurface.withOpacity(0.1),
             borderRadius: BorderRadius.circular(4),
           ),
         );
@@ -488,7 +486,7 @@ class _ProfilePhotoCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -524,15 +522,15 @@ class _ProfilePhotoCard extends StatelessWidget {
             ],
           ),
           const SizedBox(width: 16),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text("Profile Photo",
                     style: TextStyle(
-                        color: Colors.white, fontWeight: FontWeight.bold)),
-                SizedBox(height: 4),
-                Text(
+                        color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 4),
+                const Text(
                   "Clear facial photo helps in getting 2× more work requests.",
                   style: TextStyle(color: Colors.grey, fontSize: 12),
                 ),
@@ -565,7 +563,7 @@ class _StepperButton extends StatelessWidget {
         width: 44,
         height: 44,
         decoration: BoxDecoration(
-          color: filled ? AppColors.primary : const Color(0xFF0F172A),
+          color: filled ? Theme.of(context).colorScheme.primary : Theme.of(context).scaffoldBackgroundColor,
           borderRadius: BorderRadius.circular(10),
         ),
         child: Icon(icon, color: Colors.white, size: 20),
@@ -588,7 +586,7 @@ class _MapCard extends StatelessWidget {
       child: Container(
         height: 130,
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(14),
         ),
         clipBehavior: Clip.antiAlias,
@@ -617,8 +615,8 @@ class _MapCard extends StatelessWidget {
               child: Container(
                 width: 36,
                 height: 36,
-                decoration: const BoxDecoration(
-                  color: AppColors.primary,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primary,
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.my_location,
@@ -640,7 +638,7 @@ class _MapCard extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const Icon(Icons.location_on,
-                        color: AppColors.primary, size: 14),
+                        color: Color(0xFF2563EB), size: 14),
                     const SizedBox(width: 5),
                     Text(label,
                         style: const TextStyle(

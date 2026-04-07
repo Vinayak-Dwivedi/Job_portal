@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../core/theme/app_colors.dart';
+
 import '../../providers/worker_provider.dart';
+import '../../providers/theme_provider.dart';
 
 class WorkerProfileScreen extends ConsumerWidget {
   const WorkerProfileScreen({super.key});
@@ -10,27 +11,32 @@ class WorkerProfileScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final worker = ref.watch(workerProvider);
+    final themeMode = ref.watch(themeModeProvider);
+    final isDark = themeMode == ThemeMode.dark;
+    
     final name = worker?.name ?? 'Suresh Kumar';
     final skills = worker?.skills ?? ['UI/UX Design', 'Product Strategy'];
     final phone = worker?.phone ?? '';
 
+    final theme = Theme.of(context);
+
     return Scaffold(
-      backgroundColor: AppColors.darkSurface,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: Icon(Icons.arrow_back, color: theme.colorScheme.onSurface),
           onPressed: () => context.pop(),
         ),
-        title: const Text(
+        title: Text(
           'Professional Profile',
-          style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+          style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 16, fontWeight: FontWeight.bold),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.more_vert, color: Colors.white),
-            onPressed: () {},
+            icon: Icon(isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded, color: theme.colorScheme.onSurface),
+            onPressed: () => ref.read(themeModeProvider.notifier).toggleTheme(),
           ),
         ],
       ),
@@ -41,7 +47,7 @@ class WorkerProfileScreen extends ConsumerWidget {
             // Top Section
             Container(
               decoration: BoxDecoration(
-                color: AppColors.darkSurfaceContainerHighest,
+                color: theme.cardColor,
                 borderRadius: BorderRadius.circular(20),
               ),
               padding: const EdgeInsets.all(20),
@@ -52,15 +58,15 @@ class WorkerProfileScreen extends ConsumerWidget {
                     children: [
                       CircleAvatar(
                         radius: 44,
-                        backgroundColor: AppColors.darkSurfaceContainerHighest,
+                        backgroundColor: theme.colorScheme.surfaceVariant,
                         backgroundImage: worker?.profilePhotoUrl != null 
                             ? NetworkImage(worker!.profilePhotoUrl!)
                             : const NetworkImage('https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400'),
                       ),
                       Container(
                         padding: const EdgeInsets.all(2),
-                        decoration: const BoxDecoration(
-                          color: AppColors.secondary,
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.secondary,
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(Icons.check, color: Colors.white, size: 14),
@@ -73,27 +79,27 @@ class WorkerProfileScreen extends ConsumerWidget {
                     children: [
                       Text(
                         name,
-                        style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                        style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 20, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFD1FAE5),
+                          color: theme.colorScheme.primary.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(4),
                         ),
-                        child: const Text('VERIFIED', style: TextStyle(color: Color(0xFF047857), fontSize: 8, fontWeight: FontWeight.bold)),
+                        child: Text('VERIFIED', style: TextStyle(color: theme.colorScheme.primary, fontSize: 8, fontWeight: FontWeight.bold)),
                       ),
                     ],
                   ),
                   const SizedBox(height: 8),
-                  const Row(
+                  Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.star, color: Color(0xFFFBBF24), size: 14),
-                      SizedBox(width: 4),
-                      Text('4.8', style: TextStyle(color: Color(0xFFFBBF24), fontWeight: FontWeight.bold, fontSize: 13)),
-                      Text('  •  124 Reviews', style: TextStyle(color: AppColors.darkOnSurfaceVariant, fontSize: 13)),
+                      const Icon(Icons.star, color: Colors.amber, size: 14),
+                      const SizedBox(width: 4),
+                      const Text('4.8', style: TextStyle(color: Colors.amber, fontWeight: FontWeight.bold, fontSize: 13)),
+                      Text('  •  124 Reviews', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 13)),
                     ],
                   ),
                   const SizedBox(height: 24),
@@ -103,7 +109,7 @@ class WorkerProfileScreen extends ConsumerWidget {
                         child: ElevatedButton(
                           onPressed: () {},
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
+                            backgroundColor: theme.colorScheme.primary,
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                           ),
@@ -117,11 +123,11 @@ class WorkerProfileScreen extends ConsumerWidget {
                             context.push('/edit-profile');
                           },
                           style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: AppColors.outline),
+                            side: BorderSide(color: theme.colorScheme.outline),
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                           ),
-                          child: const Text('Edit Profile', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                          child: Text('Edit Profile', style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.bold)),
                         ),
                       ),
                     ],
@@ -134,21 +140,21 @@ class WorkerProfileScreen extends ConsumerWidget {
             // About Section
             Container(
               decoration: BoxDecoration(
-                color: AppColors.darkSurfaceContainerHighest,
+                color: theme.cardColor,
                 borderRadius: BorderRadius.circular(20),
               ),
               padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('About', style: TextStyle(color: AppColors.primaryContainer, fontSize: 16, fontWeight: FontWeight.bold)),
+                  Text('About', style: TextStyle(color: theme.colorScheme.primary, fontSize: 16, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 12),
-                  const Text(
+                  Text(
                     'Seasoned professional with a focus on residential and commercial electrical systems and modern plumbing solutions. Committed to safety standards and high-quality craftsmanship in every project.',
-                    style: TextStyle(color: AppColors.darkOnSurfaceVariant, fontSize: 13, height: 1.5),
+                    style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 13, height: 1.5),
                   ),
                   const SizedBox(height: 20),
-                  const Text('EXPERTISE', style: TextStyle(color: AppColors.darkOnSurfaceVariant, fontSize: 10, letterSpacing: 1.2, fontWeight: FontWeight.bold)),
+                  Text('EXPERTISE', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 10, letterSpacing: 1.2, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 10),
                   Wrap(
                     spacing: 8,
@@ -156,21 +162,21 @@ class WorkerProfileScreen extends ConsumerWidget {
                     children: skills.map((s) => Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       decoration: BoxDecoration(
-                        color: AppColors.darkSurface,
-                        border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+                        color: theme.scaffoldBackgroundColor,
+                        border: Border.all(color: theme.colorScheme.primary.withOpacity(0.3)),
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: Text(s, style: const TextStyle(color: AppColors.primaryContainer, fontSize: 12)),
+                      child: Text(s, style: TextStyle(color: theme.colorScheme.primary, fontSize: 12)),
                     )).toList(),
                   ),
                   const SizedBox(height: 20),
-                  const Text('SERVICE AREA', style: TextStyle(color: AppColors.darkOnSurfaceVariant, fontSize: 10, letterSpacing: 1.2, fontWeight: FontWeight.bold)),
+                  Text('SERVICE AREA', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 10, letterSpacing: 1.2, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 10),
-                  const Row(
+                  Row(
                     children: [
-                      Icon(Icons.location_on, color: AppColors.primaryContainer, size: 16),
-                      SizedBox(width: 8),
-                      Text('Indiranagar, Bangalore', style: TextStyle(color: Colors.white, fontSize: 13)),
+                      Icon(Icons.location_on, color: theme.colorScheme.primary, size: 16),
+                      const SizedBox(width: 8),
+                      Text('Indiranagar, Bangalore', style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 13)),
                     ],
                   ),
                 ],
@@ -181,30 +187,30 @@ class WorkerProfileScreen extends ConsumerWidget {
             // Stats
             Container(
               decoration: BoxDecoration(
-                color: AppColors.darkSurfaceContainerHighest,
+                color: theme.cardColor,
                 borderRadius: BorderRadius.circular(20),
               ),
               padding: const EdgeInsets.symmetric(vertical: 24),
               width: double.infinity,
-              child: const Column(
+              child: Column(
                 children: [
-                  Text('5+', style: TextStyle(color: AppColors.primaryContainer, fontSize: 32, fontWeight: FontWeight.w900)),
-                  Text('YEARS EXPERIENCE', style: TextStyle(color: AppColors.darkOnSurfaceVariant, fontSize: 10, letterSpacing: 1.2, fontWeight: FontWeight.bold)),
+                  Text('5+', style: TextStyle(color: theme.colorScheme.primary, fontSize: 32, fontWeight: FontWeight.w900)),
+                  Text('YEARS EXPERIENCE', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 10, letterSpacing: 1.2, fontWeight: FontWeight.bold)),
                 ],
               ),
             ),
             const SizedBox(height: 16),
             Container(
               decoration: BoxDecoration(
-                color: AppColors.darkSurfaceContainerHighest,
+                color: theme.cardColor,
                 borderRadius: BorderRadius.circular(20),
               ),
               padding: const EdgeInsets.symmetric(vertical: 24),
               width: double.infinity,
-              child: const Column(
+              child: Column(
                 children: [
-                  Text('98%', style: TextStyle(color: AppColors.secondary, fontSize: 32, fontWeight: FontWeight.w900)),
-                  Text('JOB COMPLETION', style: TextStyle(color: AppColors.darkOnSurfaceVariant, fontSize: 10, letterSpacing: 1.2, fontWeight: FontWeight.bold)),
+                  Text('98%', style: TextStyle(color: theme.colorScheme.secondary, fontSize: 32, fontWeight: FontWeight.w900)),
+                  Text('JOB COMPLETION', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 10, letterSpacing: 1.2, fontWeight: FontWeight.bold)),
                 ],
               ),
             ),
@@ -214,10 +220,10 @@ class WorkerProfileScreen extends ConsumerWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Portfolio', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                Text('Portfolio', style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 18, fontWeight: FontWeight.bold)),
                 TextButton(
                   onPressed: () {},
-                  child: const Text('View All >', style: TextStyle(color: AppColors.primaryContainer, fontSize: 12)),
+                  child: Text('View All >', style: TextStyle(color: theme.colorScheme.primary, fontSize: 12)),
                 ),
               ],
             ),
@@ -229,10 +235,10 @@ class WorkerProfileScreen extends ConsumerWidget {
               crossAxisSpacing: 12,
               mainAxisSpacing: 12,
               children: [
-                _buildPortfolioItem('https://images.unsplash.com/photo-1540569014015-19a7be504e3a?w=400'),
-                _buildPortfolioItem('https://images.unsplash.com/photo-1581092921461-eab62e97a780?w=400'),
-                _buildPortfolioItem('https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?w=400'),
-                _buildPortfolioItem('https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=400'),
+                _buildPortfolioItem('https://images.unsplash.com/photo-1540569014015-19a7be504e3a?w=400', theme),
+                _buildPortfolioItem('https://images.unsplash.com/photo-1581092921461-eab62e97a780?w=400', theme),
+                _buildPortfolioItem('https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?w=400', theme),
+                _buildPortfolioItem('https://images.unsplash.com/photo-1581092160562-40aa08e78837?w=400', theme),
               ],
             ),
             const SizedBox(height: 16),
@@ -240,32 +246,32 @@ class WorkerProfileScreen extends ConsumerWidget {
             // Testimonial
             Container(
               decoration: BoxDecoration(
-                color: AppColors.darkSurfaceContainerHighest,
+                color: theme.cardColor,
                 borderRadius: BorderRadius.circular(20),
-                border: const Border(left: BorderSide(color: AppColors.primary, width: 4)),
+                border: Border(left: BorderSide(color: theme.colorScheme.primary, width: 4)),
               ),
               padding: const EdgeInsets.all(20),
-              child: const Column(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('"', style: TextStyle(color: AppColors.primaryContainer, fontSize: 32, fontWeight: FontWeight.bold, height: 1)),
+                  Text('"', style: TextStyle(color: theme.colorScheme.primary, fontSize: 32, fontWeight: FontWeight.bold, height: 1)),
                   Text(
                     '"Suresh did an incredible job with our home renovation. He was punctual, professional, and his attention to detail is unmatched in Bangalore."',
-                    style: TextStyle(color: Colors.white, fontSize: 14, fontStyle: FontStyle.italic, height: 1.5),
+                    style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 14, fontStyle: FontStyle.italic, height: 1.5),
                   ),
-                  SizedBox(height: 16),
+                  const SizedBox(height: 16),
                   Row(
                     children: [
                       CircleAvatar(
                         radius: 16,
-                        backgroundColor: AppColors.outline,
+                        backgroundColor: theme.colorScheme.outline,
                       ),
-                      SizedBox(width: 12),
+                      const SizedBox(width: 12),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Aditi Rao', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
-                          Text('VERIFIED CUSTOMER', style: TextStyle(color: AppColors.darkOnSurfaceVariant, fontSize: 8)),
+                          Text('Aditi Rao', style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 12, fontWeight: FontWeight.bold)),
+                          Text('VERIFIED CUSTOMER', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 8)),
                         ],
                       ),
                     ],
@@ -281,7 +287,7 @@ class WorkerProfileScreen extends ConsumerWidget {
               child: FilledButton(
                 onPressed: () => context.pop(),
                 style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.primary,
+                  backgroundColor: theme.colorScheme.primary,
                   padding: const EdgeInsets.symmetric(vertical: 18),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
@@ -302,10 +308,10 @@ class WorkerProfileScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildPortfolioItem(String url) {
+  Widget _buildPortfolioItem(String url, ThemeData theme) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.darkSurfaceContainerHighest,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(16),
         image: DecorationImage(image: NetworkImage(url), fit: BoxFit.cover),
       ),

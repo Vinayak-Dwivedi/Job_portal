@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../core/theme/app_colors.dart';
+
 import '../core/widgets/primary_button.dart';
 
 class UserTypeSelectionScreen extends StatefulWidget {
@@ -20,7 +20,7 @@ class _UserTypeSelectionScreenState extends State<UserTypeSelectionScreen> {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: Icon(Icons.arrow_back, color: theme.colorScheme.onSurface),
           onPressed: () => context.pop(),
         ),
         backgroundColor: Colors.transparent,
@@ -42,7 +42,7 @@ class _UserTypeSelectionScreenState extends State<UserTypeSelectionScreen> {
               Text(
                 'Select how you want to use the platform. You can change this later.',
                 style: theme.textTheme.bodyLarge?.copyWith(
-                  color: AppColors.onSurfaceVariant,
+                  color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
               const SizedBox(height: 48),
@@ -112,16 +112,16 @@ class _RoleCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primaryContainer.withValues(alpha: 0.1) : AppColors.surfaceContainerLowest,
+          color: isSelected ? theme.colorScheme.primary.withOpacity(0.1) : theme.cardColor,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.outlineVariant,
+            color: isSelected ? theme.colorScheme.primary : theme.colorScheme.outline.withOpacity(0.2),
             width: isSelected ? 2 : 1,
           ),
           boxShadow: [
             if (isSelected)
               BoxShadow(
-                color: AppColors.primary.withValues(alpha: 0.1),
+                color: theme.colorScheme.primary.withOpacity(0.1),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -132,12 +132,12 @@ class _RoleCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: isSelected ? AppColors.primary : AppColors.surfaceContainerHigh,
+                color: isSelected ? theme.colorScheme.primary : theme.scaffoldBackgroundColor,
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 icon,
-                color: isSelected ? AppColors.onPrimary : AppColors.onSurfaceVariant,
+                color: isSelected ? Colors.white : theme.colorScheme.onSurfaceVariant,
               ),
             ),
             const SizedBox(width: 16),
@@ -148,7 +148,7 @@ class _RoleCard extends StatelessWidget {
                   Text(
                     title,
                     style: theme.textTheme.titleLarge?.copyWith(
-                      color: isSelected ? AppColors.primary : AppColors.onSurface,
+                      color: isSelected ? theme.colorScheme.primary : theme.colorScheme.onSurface,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -160,9 +160,9 @@ class _RoleCard extends StatelessWidget {
               ),
             ),
             if (isSelected)
-              const Icon(
+              Icon(
                 Icons.check_circle,
-                color: AppColors.primary,
+                color: theme.colorScheme.primary,
               ),
           ],
         ),

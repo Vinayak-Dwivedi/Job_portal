@@ -28,6 +28,7 @@ class AppTheme {
         onErrorContainer: AppColors.onErrorContainer,
       ),
       scaffoldBackgroundColor: AppColors.surface,
+      cardColor: AppColors.surfaceContainerLowest,
       textTheme: _textTheme(AppColors.onSurface, AppColors.onSurfaceVariant),
       appBarTheme: const AppBarTheme(
         backgroundColor: AppColors.surface,
@@ -64,6 +65,7 @@ class AppTheme {
         onErrorContainer: AppColors.onErrorContainer,
       ),
       scaffoldBackgroundColor: AppColors.darkSurface,
+      cardColor: AppColors.darkSurfaceContainer,
       textTheme: _textTheme(AppColors.darkOnSurface, AppColors.darkOnSurfaceVariant),
       appBarTheme: const AppBarTheme(
         backgroundColor: AppColors.darkSurface,
