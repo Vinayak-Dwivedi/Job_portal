@@ -8,8 +8,6 @@ import '../../providers/worker_provider.dart';
 import '../../providers/employer_provider.dart';
 import '../../core/services/firestore_service.dart';
 
-
-
 class OtpVerificationScreen extends ConsumerStatefulWidget {
   final String phone;
   final String role;
@@ -20,6 +18,9 @@ class OtpVerificationScreen extends ConsumerStatefulWidget {
   final String location;
   final String latitude;
   final String longitude;
+  final String bio;
+  final String businessType;
+  final bool isLogin;
 
   const OtpVerificationScreen({
     super.key,
@@ -32,9 +33,10 @@ class OtpVerificationScreen extends ConsumerStatefulWidget {
     this.location = '',
     this.latitude = '0',
     this.longitude = '0',
+    this.bio = '',
+    this.businessType = '',
+    this.isLogin = false,
   });
-
-
 
   @override
   ConsumerState<OtpVerificationScreen> createState() => _OtpVerificationScreenState();
@@ -43,82 +45,103 @@ class OtpVerificationScreen extends ConsumerStatefulWidget {
 class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
   final _pinController = TextEditingController();
   bool _canResend = false;
+  bool _isVerifying = false;
 
   @override
   void initState() {
     super.initState();
-    // Simulate initial delay before allowing resend
     Future.delayed(const Duration(seconds: 30), () {
       if (mounted) setState(() => _canResend = true);
     });
   }
 
-  bool _isVerifying = false;
+  void _verifyOtp() async {
+    final otp = _pinController.text;
 
-void _verifyOtp() async {
-  final otp = _pinController.text;
+    if (otp.length == 4) {
+      if (!mounted) return;
+      setState(() => _isVerifying = true);
 
-  if (otp.length == 4) {
-    setState(() => _isVerifying = true);
+      await Future.delayed(const Duration(seconds: 2));
 
-    await Future.delayed(const Duration(seconds: 2));
+      if (!mounted) return;
 
-    if (!mounted) return;
+      final uid = 'uid_${widget.phone.replaceAll(RegExp(r'\D'), '')}';
 
-    final uid = 'uid_${widget.phone.replaceAll(RegExp(r'\D'), '')}';
+      try {
+        // 1. Check if user exists ANYWAY (Smart Logic)
+        final userDoc = await FirestoreService.getUser(uid);
+        
+        if (userDoc != null) {
+          // EXISTING USER FOUND
+          final actualRole = userDoc['role'] ?? widget.role;
+          
+          // 🔐 LOGIN (local state)
+          ref.read(authProvider.notifier).loginWithUid(uid, widget.phone, actualRole);
+          
+          // 🔄 Update local providers based on role
+          if (actualRole == 'worker') {
+            await ref.read(workerProvider.notifier).loadProfile(uid);
+          } else {
+            await ref.read(employerProvider.notifier).loadProfile(uid);
+          }
+          
+          if (!mounted) return;
+          context.go(actualRole == 'employer' ? '/employer/dashboard' : '/worker/dashboard');
+          return;
+        }
 
-    try {
-      // ✅ SAVE TO FIRESTORE (UNIFIED SERVICE) - Ensure this completes BEFORE redirecting
-      await FirestoreService.saveUser(uid, {
-        'name': widget.name,
-        'phone': widget.phone,
-        'role': widget.role,
-        'companyName': widget.company,
-        'skills': widget.role == 'worker' ? [widget.skill] : [],
-        'experience': int.tryParse(widget.experience) ?? 0,
-        'location': widget.location,
-        'latitude': widget.latitude,
-        'longitude': widget.longitude,
-      });
+        // 2. NEW USER - Handle Login vs Signup
+        if (widget.isLogin) {
+          if (!mounted) return;
+          setState(() => _isVerifying = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Account not found. Please sign up first.'), backgroundColor: Colors.orange),
+          );
+          return;
+        }
 
-      // 🔐 LOGIN (local state) - Move entry after Firestore success
-      ref.read(authProvider.notifier).loginWithUid(
-        uid,
-        widget.phone,
-        widget.role,
-      );
-    } catch (e) {
-      debugPrint("❌ Firestore error: $e");
-    }
+        // ✅ SAVE TO FIRESTORE (SIGNUP)
+        await FirestoreService.saveUser(uid, {
+          'name': widget.name,
+          'phone': widget.phone,
+          'role': widget.role,
+          'companyName': widget.company,
+          'skills': widget.role == 'worker' ? [widget.skill] : [],
+          'experience': int.tryParse(widget.experience) ?? 0,
+          'location': widget.location,
+          'latitude': widget.latitude,
+          'longitude': widget.longitude,
+          'bio': widget.bio,
+          'businessType': widget.businessType,
+          'credits': widget.role == 'employer' ? 50 : 0, // Employers get 50 credits on signup
+        });
 
-    // 🔄 Update local providers
-    if (widget.role == 'worker') {
-      ref.read(workerProvider.notifier).updateFromSignup(
-        uid: uid,
-        name: widget.name,
-        phone: widget.phone,
-        skill: widget.skill,
-        experience: widget.experience,
-      );
+        // 🔐 LOGIN
+        ref.read(authProvider.notifier).loginWithUid(uid, widget.phone, widget.role);
+
+        // 🔄 Update local providers
+        if (widget.role == 'worker') {
+          await ref.read(workerProvider.notifier).loadProfile(uid);
+        } else {
+          await ref.read(employerProvider.notifier).loadProfile(uid);
+        }
+
+        if (!mounted) return;
+        context.go('/verified');
+      } catch (e) {
+        debugPrint("❌ Verification error: $e");
+        if (mounted) setState(() => _isVerifying = false);
+      }
     } else {
-      ref.read(employerProvider.notifier).updateFromSignup(
-        uid: uid,
-        contactName: widget.name,
-        companyName: widget.company,
-        phone: widget.phone,
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Invalid OTP'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
-
-    context.go('/verified');
-  } else {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Invalid OTP'),
-        backgroundColor: Colors.red,
-      ),
-    );
   }
-}
 
   @override
   void dispose() {
@@ -153,10 +176,10 @@ void _verifyOtp() async {
 
     final focusedPinTheme = defaultPinTheme.copyWith(
       decoration: defaultPinTheme.decoration!.copyWith(
-        border: Border.all(color: theme.colorScheme.primary, width: 2), // Branding blue highlight
+        border: Border.all(color: theme.colorScheme.primary, width: 2),
         boxShadow: [
           BoxShadow(
-            color: theme.colorScheme.primary.withOpacity(0.35), // Soft glow
+            color: theme.colorScheme.primary.withOpacity(0.35),
             blurRadius: 16,
             spreadRadius: 2,
           ),
@@ -205,7 +228,7 @@ void _verifyOtp() async {
                   style: TextStyle(
                     fontSize: 36,
                     fontWeight: FontWeight.w900,
-                    color: theme.colorScheme.primary, // Themed primary color
+                    color: theme.colorScheme.primary,
                     height: 1.1,
                   ),
                 ).animate().fadeIn(delay: 200.ms).moveY(begin: 10, end: 0)
@@ -215,13 +238,12 @@ void _verifyOtp() async {
                   "We've sent a secure code to your device. Enter the digits below to authenticate.",
                   style: TextStyle(
                     fontSize: 15,
-                    color: theme.colorScheme.onSurfaceVariant, // Use themed secondary
+                    color: theme.colorScheme.onSurfaceVariant,
                     height: 1.5,
                   ),
                 ).animate().fadeIn(delay: 300.ms),
                 const SizedBox(height: 48),
                 
-                // OTP Input
                 Center(
                   child: Pinput(
                     length: 4,
@@ -233,7 +255,6 @@ void _verifyOtp() async {
                 ),
                 const SizedBox(height: 48),
                 
-                // Verifying Indicator
                 if (_isVerifying)
                   Center(
                     child: Column(
@@ -306,11 +327,10 @@ void _verifyOtp() async {
                     ),
                   )
                 else
-                  const SizedBox(height: 90), // Placeholder to maintain space
+                  const SizedBox(height: 90),
 
                 const SizedBox(height: 32),
 
-                // Verify Code Button
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
@@ -330,19 +350,16 @@ void _verifyOtp() async {
                 ),
                 const SizedBox(height: 24),
                 
-                // Resend text
                 Center(
                   child: InkWell(
-                    onTap: _canResend ? () {
-                      // Logic to resend OTP
-                    } : null,
+                    onTap: _canResend ? () {} : null,
                     borderRadius: BorderRadius.circular(8),
                     child: Padding(
                       padding: const EdgeInsets.all(8.0),
                       child: Text(
                         "Didn't receive the code?",
                         style: TextStyle(
-                          color: _canResend ? const Color(0xFFE5E7EB) : const Color(0xFF94A3B8),
+                          color: _canResend ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant,
                           fontSize: 14,
                           fontWeight: _canResend ? FontWeight.bold : FontWeight.normal,
                         ),
@@ -358,13 +375,6 @@ void _verifyOtp() async {
                     color: theme.cardColor,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: theme.dividerColor),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(theme.brightness == Brightness.dark ? 0.2 : 0.05),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
                   ),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,

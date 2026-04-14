@@ -5,6 +5,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../core/services/subscription_service.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../providers/worker_provider.dart';
+import '../../providers/employer_provider.dart';
 
 class SubscriptionCheckoutScreen extends ConsumerStatefulWidget {
   final String tier;
@@ -23,25 +25,40 @@ class SubscriptionCheckoutScreen extends ConsumerStatefulWidget {
 class _SubscriptionCheckoutScreenState extends ConsumerState<SubscriptionCheckoutScreen> {
   bool _isProcessing = false;
 
-  @override
-  void initState() {
-    super.initState();
-    // No Razorpay service needed
-  }
-
   Future<void> _processSubscription() async {
     setState(() => _isProcessing = true);
     try {
-      final uid = FirebaseAuth.instance.currentUser!.uid;
-      final days = widget.tier == 'pro' ? 30 : 90;
-      final maxApp = widget.tier == 'pro' ? 10 : 999;
+      final auth = FirebaseAuth.instance.currentUser;
+      if (auth == null) throw Exception('User not logged in');
+      
+      final uid = auth.uid;
+      final days = widget.tier.toLowerCase() == 'pro' ? 30 : 90;
+      final maxApp = widget.tier.toLowerCase() == 'pro' ? 10 : 999;
+      
       await SubscriptionService.updateSubscription(uid, widget.tier, days, maxApp);
+      
+      // Refresh local profile state for both roles to be safe
+      await ref.read(workerProvider.notifier).loadProfile(uid);
+      await ref.read(employerProvider.notifier).loadProfile(uid);
+
       if (mounted) {
-        context.go('/subscription-success');
+        context.go('/subscription-success'); 
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Transaction Successful! Credits added to your account. ⚡'), 
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Subscription update failed: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Subscription update failed: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => _isProcessing = false);
@@ -49,13 +66,7 @@ class _SubscriptionCheckoutScreenState extends ConsumerState<SubscriptionCheckou
   }
 
   void _startPayment() {
-    // Directly process subscription without payment gateway
     _processSubscription();
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
   }
 
   @override
@@ -116,7 +127,7 @@ class _SubscriptionCheckoutScreenState extends ConsumerState<SubscriptionCheckou
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 ),
                 child: _isProcessing 
-                  ? const CircularProgressIndicator(color: Colors.white)
+                  ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                   : const Text('Pay Securely', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
               ),
             ),

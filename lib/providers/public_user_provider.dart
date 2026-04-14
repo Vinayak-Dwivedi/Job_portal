@@ -3,9 +3,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'auth_provider.dart';
 
 // Fetch public profile data from the unified 'users' collection
-final publicProfileProvider = FutureProvider.family<Map<String, dynamic>?, ({String uid, String role})>((ref, arg) async {
+final publicProfileProvider = FutureProvider.family<Map<String, dynamic>?, String>((ref, uid) async {
   try {
-    final doc = await FirebaseFirestore.instance.collection('users').doc(arg.uid).get();
+    final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
     if (!doc.exists) return null;
     
     final data = doc.data()!;

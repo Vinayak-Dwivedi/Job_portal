@@ -95,22 +95,39 @@ class WorkerModel {
   }
 
   factory WorkerModel.fromMap(Map<String, dynamic> map, String uid) {
+    // 🌍 Robust location parsing (Handle Map vs String)
+    String parsedLocation = '';
+    final locData = map['location'];
+    if (locData is Map) {
+      parsedLocation = (locData['address'] ?? '').toString();
+    } else {
+      parsedLocation = (locData ?? '').toString();
+    }
+
+    // 🛠️ Robust List parsing
+    List<String> parseList(dynamic data) {
+      if (data == null) return [];
+      if (data is List) return data.map((e) => e.toString()).toList();
+      if (data is String && data.isNotEmpty) return [data];
+      return [];
+    }
+
     return WorkerModel(
       uid: uid,
-      name: map['name'] ?? '',
-      profilePhotoUrl: map['profilePhotoUrl'],
-      location: map['location'] ?? '',
-      bio: map['bio'] ?? '',
-      jobCategory: map['jobCategory'] ?? 'blue_collar',
-      jobTitles: List<String>.from(map['jobTitles'] ?? []),
-      skills: List<String>.from(map['skills'] ?? []),
+      name: (map['name'] ?? map['fullName'] ?? '').toString(),
+      profilePhotoUrl: map['profilePhotoUrl']?.toString() ?? map['userPhotoUrl']?.toString(),
+      location: parsedLocation,
+      bio: (map['bio'] ?? '').toString(),
+      jobCategory: (map['jobCategory'] ?? 'blue_collar').toString(),
+      jobTitles: parseList(map['jobTitles']),
+      skills: parseList(map['skills']),
       experience: int.tryParse(map['experience']?.toString() ?? '0') ?? 0,
-      isVerified: map['isVerified'] ?? false,
-      phone: map['phone'] ?? '',
-      email: map['email'],
-      credits: map['credits'] ?? 0,
+      isVerified: map['isVerified'] ?? map['isUserVerified'] ?? false,
+      phone: (map['phone'] ?? '').toString(),
+      email: map['email']?.toString(),
+      credits: int.tryParse(map['credits']?.toString() ?? '50') ?? 50,
       rating: double.tryParse(map['rating']?.toString() ?? '0.0') ?? 0.0,
-      reviewCount: map['reviewCount'] ?? 0,
+      reviewCount: int.tryParse(map['reviewCount']?.toString() ?? '0') ?? 0,
     );
   }
 }

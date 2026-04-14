@@ -97,7 +97,7 @@ class SplashLandingScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                     TextButton(
-                      onPressed: () => context.push('/role-select'),
+                      onPressed: () => context.push('/login'),
                       style: TextButton.styleFrom(
                         foregroundColor: theme.colorScheme.primary,
                         padding: const EdgeInsets.symmetric(vertical: 16),

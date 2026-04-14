@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:go_router/go_router.dart';
 
 class SubscriptionPlansScreen extends StatelessWidget {
@@ -14,58 +15,74 @@ class SubscriptionPlansScreen extends StatelessWidget {
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          children: [
-            const Icon(Icons.star, color: Color(0xFFF59E0B), size: 48),
-            const SizedBox(height: 16),
-            const Text(
-              'Get Discovered Faster',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Choose a plan that fits your career goals.',
-              style: TextStyle(fontSize: 15, color: Color(0xFF64748B)),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 32),
+      body: StreamBuilder<DocumentSnapshot>(
+        stream: FirebaseFirestore.instance.collection('platform_settings').doc('subscriptions').snapshots(),
+        builder: (context, snapshot) {
+          Map<String, dynamic> prices = {
+            'pro': '₹299',
+            'elite': '₹799',
+          };
 
-            _buildPlanCard(
-              context,
-              tier: 'pro',
-              name: 'Pro Plan',
-              price: '₹299',
-              duration: '/mo',
-              features: [
-                'Unlimited Job Applications',
-                'Priority Profile Listing',
-                'Contact Employers Directly',
-                'No Ads',
+          if (snapshot.hasData && snapshot.data!.exists) {
+            final data = snapshot.data!.data() as Map<String, dynamic>;
+            if (data['proPrice'] != null) prices['pro'] = data['proPrice'];
+            if (data['elitePrice'] != null) prices['elite'] = data['elitePrice'];
+          }
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              children: [
+                const Icon(Icons.star, color: Color(0xFFF59E0B), size: 48),
+                const SizedBox(height: 16),
+                const Text(
+                  'Get Discovered Faster',
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Choose a plan that fits your career goals.',
+                  style: TextStyle(fontSize: 15, color: Color(0xFF64748B)),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 32),
+
+                _buildPlanCard(
+                  context,
+                  tier: 'pro',
+                  name: 'Pro Plan',
+                  price: prices['pro']!,
+                  duration: '/mo',
+                  features: [
+                    'Unlimited Job Applications',
+                    'Priority Profile Listing',
+                    'Contact Employers Directly',
+                    'No Ads',
+                  ],
+                  color: const Color(0xFF1D4ED8),
+                  isPopular: true,
+                ),
+                const SizedBox(height: 20),
+                
+                _buildPlanCard(
+                  context,
+                  tier: 'elite',
+                  name: 'Elite Plan',
+                  price: prices['elite']!,
+                  duration: '/quarter',
+                  features: [
+                    'Everything in Pro',
+                    'Dedicated Account Manager',
+                    'Featured Badge on Profile',
+                    'Resume Feedback',
+                  ],
+                  color: const Color(0xFF0F172A),
+                  isPopular: false,
+                ),
               ],
-              color: const Color(0xFF1D4ED8),
-              isPopular: true,
             ),
-            const SizedBox(height: 20),
-            
-            _buildPlanCard(
-              context,
-              tier: 'elite',
-              name: 'Elite Plan',
-              price: '₹799',
-              duration: '/quarter',
-              features: [
-                'Everything in Pro',
-                'Dedicated Account Manager',
-                'Featured Badge on Profile',
-                'Resume Feedback',
-              ],
-              color: const Color(0xFF0F172A),
-              isPopular: false,
-            ),
-          ],
-        ),
+          );
+        }
       ),
     );
   }

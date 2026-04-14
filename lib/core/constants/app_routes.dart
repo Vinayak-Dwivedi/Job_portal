@@ -8,10 +8,12 @@ import '../../providers/worker_provider.dart';
 import '../../providers/employer_provider.dart';
 import '../../screens/splash_landing_screen.dart';
 import '../../screens/user_type_selection.dart';
-import '../../screens/auth/worker_signup.dart';
-import '../../screens/auth/employer_signup.dart';
 import '../../screens/auth/otp_verification_screen.dart';
 import '../../screens/auth/verification_success_screen.dart';
+import '../../screens/auth/worker_signup.dart';
+import '../../screens/auth/employer_signup.dart';
+import '../../screens/auth/login_screen.dart';
+import '../../screens/common/search_screen.dart';
 import '../../screens/worker/worker_dashboard.dart';
 import '../../screens/worker/worker_profile_screen.dart';
 import '../../screens/common/edit_profile_screen.dart';
@@ -36,6 +38,14 @@ import '../../screens/admin/admin_posts_screen.dart';
 import '../../screens/admin/admin_users_screen.dart';
 import '../../screens/banned_screen.dart';
 import '../../widgets/common/page_transitions.dart';
+import '../../screens/settings/settings_screen.dart';
+import '../../screens/settings/language_settings_screen.dart';
+import '../../screens/settings/privacy_settings_screen.dart';
+import '../../screens/settings/notification_settings_screen.dart';
+import '../../screens/settings/verification_screen.dart';
+import '../../screens/settings/role_preferences_screen.dart';
+import '../../screens/settings/support_screen.dart';
+import '../../screens/common/announcements_screen.dart';
 
 import '../../widgets/common/ki_bottom_nav_bar.dart';
 
@@ -114,6 +124,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           state.matchedLocation.startsWith('/role-select') ||
           state.matchedLocation.startsWith('/worker/signup') ||
           state.matchedLocation.startsWith('/employer/signup') ||
+          state.matchedLocation.startsWith('/login') ||
           state.matchedLocation.startsWith('/otp') ||
           state.matchedLocation.startsWith('/admin') ||
           state.matchedLocation.startsWith('/verified');
@@ -128,10 +139,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/role-select', builder: (_, __) => const UserTypeSelectionScreen()),
       GoRoute(path: '/worker/signup', builder: (_, __) => const WorkerSignupScreen()),
       GoRoute(path: '/employer/signup', builder: (_, __) => const EmployerSignupScreen()),
+      GoRoute(path: '/login', builder: (_, __) => const LoginScreen()),
+      GoRoute(path: '/search', builder: (_, __) => const SearchScreen()),
       GoRoute(
         path: '/otp',
         pageBuilder: (context, state) {
-          final extra = state.extra as Map<String, String>? ?? {};
+          final extra = state.extra as Map<String, dynamic>? ?? {};
           return fadeInPage(
             state,
             OtpVerificationScreen(
@@ -142,8 +155,10 @@ final routerProvider = Provider<GoRouter>((ref) {
               skill: extra['skill'] ?? '',
               experience: extra['experience'] ?? '',
               location: extra['location'] ?? '',
-              latitude: extra['latitude'] ?? '0',
-              longitude: extra['longitude'] ?? '0',
+              latitude: extra['latitude']?.toString() ?? '0',
+              longitude: extra['longitude']?.toString() ?? '0',
+              bio: extra['bio']?.toString() ?? '',
+              businessType: extra['businessType']?.toString() ?? '',
             ),
           );
         },
@@ -179,7 +194,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state, child) {
           final loc = state.matchedLocation;
           int currentIndex = 0;
-          if (loc.startsWith('/employer/workers')) currentIndex = 2;
+          if (loc.startsWith('/employer/workers')) currentIndex = 1;
           if (loc.startsWith('/employer/my-jobs')) currentIndex = 3;
           if (loc.startsWith('/employer/profile')) currentIndex = 4;
           return EmployerShell(currentIndex: currentIndex, child: child);
@@ -231,6 +246,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
 
       // Subscription routes
+      GoRoute(path: '/subscription', redirect: (_, __) => '/subscription-plans'),
       GoRoute(path: '/subscription-plans', builder: (_, __) => const SubscriptionPlansScreen()),
       GoRoute(
         path: '/subscription-checkout',
@@ -256,6 +272,16 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/test',
         builder: (context, state) => const FirebaseTestScreen(),
       ),
+
+      // Settings routes
+      GoRoute(path: '/settings', pageBuilder: (context, state) => slideRightPage(state, const SettingsScreen())),
+      GoRoute(path: '/settings/language', pageBuilder: (context, state) => slideRightPage(state, const LanguageSettingsScreen())),
+      GoRoute(path: '/settings/privacy', pageBuilder: (context, state) => slideRightPage(state, const PrivacySettingsScreen())),
+      GoRoute(path: '/settings/notifications', pageBuilder: (context, state) => slideRightPage(state, const NotificationSettingsScreen())),
+      GoRoute(path: '/settings/verification', pageBuilder: (context, state) => slideRightPage(state, const VerificationScreen())),
+      GoRoute(path: '/settings/preferences', pageBuilder: (context, state) => slideRightPage(state, const RolePreferencesScreen())),
+      GoRoute(path: '/settings/support', pageBuilder: (context, state) => slideRightPage(state, const SupportScreen())),
+      GoRoute(path: '/announcements', pageBuilder: (context, state) => slideRightPage(state, const AnnouncementsScreen())),
     ],
   );
 });

@@ -18,6 +18,7 @@ class EmployerModel {
   final String bio;
   final double rating;
   final int reviewCount;
+  final String hirerSubType;
 
   EmployerModel({
     required this.uid,
@@ -37,6 +38,7 @@ class EmployerModel {
     this.rating = 0.0,
     this.reviewCount = 0,
     this.bio = '',
+    this.hirerSubType = 'company',
   });
 
   String get name => companyName.isNotEmpty ? companyName : contactPersonName;
@@ -47,6 +49,7 @@ class EmployerModel {
     return {
       'companyName': companyName,
       'businessType': businessType,
+      'hirerSubType': hirerSubType,
       'website': website,
       'contactPersonName': contactPersonName,
       'phone': phone,
@@ -65,24 +68,35 @@ class EmployerModel {
   }
 
   factory EmployerModel.fromMap(Map<String, dynamic> map, String uid) {
+    // 🌍 Robust location parsing (Handle Map vs String)
+    String parsedLocation = '';
+    final locData = map['officeAddress'] ?? map['location'];
+    if (locData is Map) {
+      parsedLocation = (locData['address'] ?? '').toString();
+    } else {
+      parsedLocation = (locData ?? '').toString();
+    }
+
     return EmployerModel(
       uid: uid,
-      companyName: map['companyName'] ?? '',
-      businessType: map['businessType'] ?? '',
-      website: map['website'],
-      contactPersonName: map['contactPersonName'] ?? '',
-      phone: map['phone'] ?? '',
-      email: map['email'],
-      officeAddress: map['officeAddress'] ?? '',
-      officeLatLng: map['officeLatLng'],
-      logoUrl: map['logoUrl'],
-      gstCertificateUrl: map['gstCertificateUrl'],
-      govtIdUrl: map['govtIdUrl'],
-      isVerified: map['isVerified'] ?? false,
-      credits: map['credits'] ?? 0,
-      bio: map['bio'] ?? '',
+      companyName: (map['companyName'] ?? map['name'] ?? '').toString(),
+      businessType: (map['businessType'] ?? '').toString(),
+      hirerSubType: (map['hirerSubType'] ?? 'company').toString(),
+      website: map['website']?.toString(),
+      contactPersonName: (map['contactPersonName'] ?? map['fullName'] ?? map['name'] ?? '').toString(),
+      phone: (map['phone'] ?? '').toString(),
+      email: map['email']?.toString(),
+      officeAddress: parsedLocation,
+      officeLatLng: map['officeLatLng'] ?? map['locationLatLng'],
+      logoUrl: map['logoUrl']?.toString() ?? map['profilePhotoUrl']?.toString() ?? map['userPhotoUrl']?.toString(),
+      gstCertificateUrl: map['gstCertificateUrl']?.toString(),
+      govtIdUrl: map['govtIdUrl']?.toString(),
+      isVerified: map['isVerified'] ?? map['isUserVerified'] ?? false,
+      credits: int.tryParse(map['credits']?.toString() ?? '50') ?? 50,
+      bio: (map['bio'] ?? '').toString(),
       rating: double.tryParse(map['rating']?.toString() ?? '0.0') ?? 0.0,
-      reviewCount: map['reviewCount'] ?? 0,
+      reviewCount: int.tryParse(map['reviewCount']?.toString() ?? '0') ?? 0,
     );
   }
 }
+

@@ -13,6 +13,8 @@ class EmployerNotifier extends Notifier<EmployerModel?> {
     required String contactName,
     required String companyName,
     required String phone,
+    String? bio,
+    String? hirerSubType,
   }) {
     state = EmployerModel(
       uid: uid,
@@ -20,10 +22,14 @@ class EmployerNotifier extends Notifier<EmployerModel?> {
       companyName: companyName,
       phone: phone,
       isVerified: true,
-      businessType: '',
+      businessType: 'company',
+      hirerSubType: hirerSubType ?? 'Company',
       officeAddress: '',
+      credits: 50,
+      bio: bio ?? '',
     );
   }
+
 
   Future<void> loadProfile(String uid) async {
     try {
@@ -43,6 +49,7 @@ class EmployerNotifier extends Notifier<EmployerModel?> {
           businessType: '',
           officeAddress: '',
           isVerified: true,
+          credits: 50,
         );
       }
     } catch (e) {

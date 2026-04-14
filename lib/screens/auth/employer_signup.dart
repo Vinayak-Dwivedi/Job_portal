@@ -3,9 +3,6 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
-// Standalone styles to ensure this exact UI remains intact
-// Removed _AppColors and using dynamic theme.
-
 class EmployerSignupScreen extends StatefulWidget {
   const EmployerSignupScreen({super.key});
 
@@ -18,9 +15,9 @@ class _EmployerSignupScreenState extends State<EmployerSignupScreen> {
   final _nameController = TextEditingController();
   final _companyController = TextEditingController();
   final _phoneController = TextEditingController();
-  final _descController = TextEditingController();
+  final _bioController = TextEditingController();
 
-  String _selectedIndustry = 'Select Industry';
+  String _selectedHirerType = 'Company / Organization';
   LatLng? _selectedLocation;
 
   void _submitForm() {
@@ -30,7 +27,8 @@ class _EmployerSignupScreenState extends State<EmployerSignupScreen> {
         'role': 'employer',
         'name': _nameController.text.trim(),
         'company': _companyController.text.trim(),
-        'skill': _selectedIndustry == 'Select Industry' ? '' : _selectedIndustry,
+        'businessType': _selectedHirerType,
+        'bio': _bioController.text.trim(),
         'experience': '',
         'latitude': _selectedLocation?.latitude.toString() ?? '',
         'longitude': _selectedLocation?.longitude.toString() ?? '',
@@ -43,7 +41,7 @@ class _EmployerSignupScreenState extends State<EmployerSignupScreen> {
     _nameController.dispose();
     _companyController.dispose();
     _phoneController.dispose();
-    _descController.dispose();
+    _bioController.dispose();
     super.dispose();
   }
 
@@ -229,7 +227,7 @@ class _EmployerSignupScreenState extends State<EmployerSignupScreen> {
                 controller: _phoneController,
                 keyboardType: TextInputType.phone,
                 prefixWidget: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -247,10 +245,15 @@ class _EmployerSignupScreenState extends State<EmployerSignupScreen> {
               const SizedBox(height: 20),
 
               _textField(
-                label: "COMPANY DESCRIPTION",
+                label: "COMPANY DESCRIPTION / BIO",
                 hint: "Describe your business, values, and what\nyou look for in partners...",
-                controller: _descController,
+                controller: _bioController,
                 maxLines: 4,
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) return "Company description is required";
+                  if (v.trim().length < 20) return "Please provide at least 20 characters";
+                  return null;
+                },
               ),
               const SizedBox(height: 36),
 
@@ -259,7 +262,7 @@ class _EmployerSignupScreenState extends State<EmployerSignupScreen> {
               const SizedBox(height: 20),
 
               const Text(
-                "INDUSTRY CATEGORY",
+                "EMPLOYER TYPE",
                 style: TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.8),
               ),
               const SizedBox(height: 8),
@@ -271,20 +274,25 @@ class _EmployerSignupScreenState extends State<EmployerSignupScreen> {
                 ),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<String>(
-                    value: _selectedIndustry,
+                    value: _selectedHirerType,
                     isExpanded: true,
                     dropdownColor: theme.cardColor,
                     icon: Icon(Icons.keyboard_arrow_down_rounded, color: theme.colorScheme.primary),
                     style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 15, fontWeight: FontWeight.w500),
-                    items: ['Select Industry', 'Civil Construction', 'IT & Software', 'Manufacturing', 'Retail']
-                        .map((String value) {
+                    items: [
+                      'Individual Hirer',
+                      'Contractor',
+                      'Company / Organization',
+                      'Sub-Contractor'
+                    ].map((String value) {
                       return DropdownMenuItem<String>(
                         value: value,
                         child: Text(value, style: TextStyle(color: theme.colorScheme.onSurface)),
                       );
                     }).toList(),
+
                     onChanged: (val) {
-                      if (val != null) setState(() => _selectedIndustry = val);
+                      if (val != null) setState(() => _selectedHirerType = val);
                     },
                   ),
                 ),
@@ -420,15 +428,33 @@ class _EmployerSignupScreenState extends State<EmployerSignupScreen> {
                   ],
                 ),
               ],
-            )
+            ),
+            const SizedBox(height: 24),
+            Center(
+              child: GestureDetector(
+                onTap: () => context.push('/login'),
+                child: RichText(
+                  text: TextSpan(
+                    text: "Already have an account? ",
+                    style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 13),
+                    children: [
+                      TextSpan(
+                        text: "Log In",
+                        style: TextStyle(
+                            color: theme.colorScheme.primary,
+                            fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 }
-
-// ── Custom Painters for design placeholders ─────────────────────────────────
 
 class _DashedCirclePainter extends CustomPainter {
   final Color color;
@@ -441,7 +467,6 @@ class _DashedCirclePainter extends CustomPainter {
       ..strokeWidth = 1.5
       ..style = PaintingStyle.stroke;
     
-    // Very simple dashed circle simulation drawing arcs
     final rect = Rect.fromCenter(center: Offset(size.width / 2, size.height / 2), width: size.width - 2, height: size.height - 2);
     for (int i = 0; i < 360; i += 15) {
       if (i % 30 == 0) {
@@ -453,5 +478,3 @@ class _DashedCirclePainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
-
-

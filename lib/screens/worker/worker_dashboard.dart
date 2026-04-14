@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../providers/worker_provider.dart';
 import '../../providers/post_provider.dart';
-import 'package:timeago/timeago.dart' as timeago;
-
 import '../../providers/auth_provider.dart';
+import '../../widgets/feed/post_card.dart';
+import '../../core/utils/profile_utils.dart';
+import '../../core/theme/app_colors.dart';
 
 class WorkerHomeFeed extends ConsumerStatefulWidget {
   const WorkerHomeFeed({super.key});
@@ -31,7 +31,9 @@ class _WorkerHomeFeedState extends ConsumerState<WorkerHomeFeed> {
   @override
   Widget build(BuildContext context) {
     final worker = ref.watch(workerProvider);
-    final jobsAsyncValue = ref.watch(jobFeedProvider);
+    final auth = ref.watch(authProvider);
+    final feedAsyncValue = ref.watch(unifiedFeedProvider);
+    final appliedJobs = ref.watch(workerAppliedJobsProvider);
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -60,10 +62,41 @@ class _WorkerHomeFeedState extends ConsumerState<WorkerHomeFeed> {
                   Expanded(
                     child: Text('KI Job Portal', style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 16, fontWeight: FontWeight.w800, letterSpacing: -0.5)),
                   ),
-                  const IconButton(icon: Icon(Icons.notifications_none_rounded, color: Color(0xFF2563EB), size: 26), onPressed: null),
+                  IconButton(
+                    icon: Icon(Icons.search_rounded, color: AppColors.primary, size: 26),
+                    onPressed: () => context.push('/search'),
+                  ),
+                  Consumer(
+                    builder: (context, ref, child) {
+                      final announcementsAsync = ref.watch(systemAnnouncementsProvider);
+                      return Stack(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.notifications_none_rounded, color: Color(0xFF2563EB), size: 26),
+                            onPressed: () => context.push('/announcements'),
+                          ),
+                          announcementsAsync.when(
+                            data: (list) => list.isNotEmpty 
+                              ? Positioned(
+                                  right: 8,
+                                  top: 8,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(4),
+                                    decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                                    constraints: const BoxConstraints(minWidth: 8, minHeight: 8),
+                                  ),
+                                )
+                              : const SizedBox.shrink(),
+                            loading: () => const SizedBox.shrink(),
+                            error: (_, __) => const SizedBox.shrink(),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
                   const SizedBox(width: 4),
                   GestureDetector(
-                    onTap: () => context.go('/worker/profile'),
+                    onTap: () => context.push('/public-profile/${auth?.uid}/worker'),
                     child: Container(
                       padding: const EdgeInsets.all(2),
                       decoration: BoxDecoration(
@@ -73,8 +106,12 @@ class _WorkerHomeFeedState extends ConsumerState<WorkerHomeFeed> {
                       child: CircleAvatar(
                         radius: 16,
                         backgroundColor: theme.colorScheme.outline,
-                        backgroundImage: worker?.localImageFile != null ? FileImage(worker!.localImageFile!) : null,
-                        child: worker?.localImageFile == null ? Icon(Icons.person, color: theme.colorScheme.onSurfaceVariant, size: 18) : null,
+                        backgroundImage: (worker?.profilePhotoUrl != null && worker!.profilePhotoUrl!.isNotEmpty) 
+                            ? NetworkImage(worker.profilePhotoUrl!) 
+                            : (worker?.localImageFile != null ? FileImage(worker!.localImageFile!) : null),
+                        child: (worker?.profilePhotoUrl == null && worker?.localImageFile == null) 
+                            ? Icon(Icons.person, color: theme.colorScheme.onSurfaceVariant, size: 18) 
+                            : null,
                       ),
                     ),
                   ),
@@ -85,7 +122,12 @@ class _WorkerHomeFeedState extends ConsumerState<WorkerHomeFeed> {
         ),
       ),
       body: RefreshIndicator(
-        onRefresh: () async => await Future.delayed(const Duration(seconds: 1)),
+        onRefresh: () async {
+          final auth = ref.read(authProvider);
+          if (auth != null) {
+            await ref.read(workerProvider.notifier).loadProfile(auth.uid);
+          }
+        },
         color: const Color(0xFF2563EB),
         backgroundColor: theme.cardColor,
         child: SingleChildScrollView(
@@ -112,35 +154,51 @@ class _WorkerHomeFeedState extends ConsumerState<WorkerHomeFeed> {
                 ),
               ),
 
-              // ── Stats row ────────────────────────────────
+              // Stats row
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
                 child: Row(
                   children: [
                     Expanded(
                       child: _StatCard(
-                        value: '08',
+                        value: appliedJobs.when(
+                          data: (jobs) => jobs.length.toString().padLeft(2, '0'),
+                          loading: () => '..',
+                          error: (_, __) => '00',
+                        ),
                         label: 'ACTIVE\nJOBS',
                         color: const Color(0xFF60A5FA),
                         theme: theme,
+                        onTap: () => context.push('/profile'),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: _StatCard(
-                        value: '${worker?.credits ?? 142}',
+                        value: '${worker?.credits ?? 50}',
                         label: 'CREDITS\nLEFT',
                         color: const Color(0xFFFBBF24),
                         theme: theme,
+                        onTap: () => context.push('/subscription'),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: _StatCard(
-                        value: '92%',
+                        value: '${ProfileUtils.calculateStrength(
+                          name: worker?.name ?? "",
+                          phone: worker?.phone ?? "",
+                          email: worker?.email,
+                          bio: worker?.bio,
+                          location: worker?.location,
+                          skills: worker?.skills,
+                          isVerified: worker?.isVerified ?? false,
+                          isWorker: true,
+                        ).toInt()}%',
                         label: 'PROFILE\nSTRENGTH',
                         color: const Color(0xFF34D399),
                         theme: theme,
+                        onTap: () => context.push('/edit-profile'),
                       ),
                     ),
                   ],
@@ -200,7 +258,7 @@ class _WorkerHomeFeedState extends ConsumerState<WorkerHomeFeed> {
                 ),
               ),
 
-              // ── Recommended Horizontal row (Optional Filter) ──────────────
+              // Recommended Horizontal row (Optional Filter)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
                 child: Row(
@@ -227,23 +285,21 @@ class _WorkerHomeFeedState extends ConsumerState<WorkerHomeFeed> {
               ),
               const SizedBox(height: 16),
 
-              // ── Jobs List ──────────────────────────
-              jobsAsyncValue.when(
-                data: (jobs) {
-                  if (jobs.isEmpty) {
+              // Unified Feed
+              feedAsyncValue.when(
+                data: (posts) {
+                  if (posts.isEmpty) {
                     return Padding(
                       padding: const EdgeInsets.all(20.0),
-                      child: Text('No job postings available.', style: TextStyle(color: theme.colorScheme.onSurfaceVariant)),
+                      child: Text('No updates available.', style: TextStyle(color: theme.colorScheme.onSurfaceVariant)),
                     );
                   }
-                  return ListView.separated(
+                  return ListView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    itemCount: jobs.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 16),
+                    itemCount: posts.length,
                     itemBuilder: (context, index) {
-                      return _DarkJobCard(job: jobs[index], theme: theme);
+                      return PostCard(post: posts[index]);
                     },
                   );
                 },
@@ -291,179 +347,28 @@ class _StatCard extends StatelessWidget {
   final String label;
   final Color color;
   final ThemeData theme;
-  const _StatCard({required this.value, required this.label, required this.color, required this.theme});
+  final VoidCallback? onTap;
+  const _StatCard({required this.value, required this.label, required this.color, required this.theme, this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: theme.colorScheme.outline),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(value, style: TextStyle(color: color, fontWeight: FontWeight.w900, fontSize: 24)),
-          const SizedBox(height: 8),
-          Text(label, style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: 1.0, height: 1.3)),
-        ],
-      ),
-    );
-  }
-}
-
-class _DarkJobCard extends StatelessWidget {
-  final Map<String, dynamic> job;
-  final ThemeData theme;
-  const _DarkJobCard({required this.job, required this.theme});
-
-  @override
-  Widget build(BuildContext context) {
-    final bool isVerified = job['isVerified'] == true;
-    final String title = job['jobTitle']?.toString() ?? 'Job Posting';
-    final String company = job['companyName']?.toString() ?? 'Unknown Company';
-    final String location = job['location']?.toString() ?? '';
-    final String salary = job['jobSalary']?.toString() ?? 'Negotiable';
-    final createdAt = job['createdAt'];
-    
-    String postedTime = 'Just now';
-    if (createdAt != null) {
-      if (createdAt is Timestamp) {
-        postedTime = timeago.format(createdAt.toDate());
-      }
-    }
-
-    String profileUrl = job['profilePhotoUrl']?.toString() ?? '';
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: theme.colorScheme.outline),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceVariant,
-                  borderRadius: BorderRadius.circular(12),
-                  image: profileUrl.isNotEmpty ? DecorationImage(image: NetworkImage(profileUrl), fit: BoxFit.cover) : null,
-                ),
-                child: profileUrl.isEmpty ? Icon(Icons.business, color: theme.colorScheme.onSurfaceVariant, size: 24) : null,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            title,
-                            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: theme.colorScheme.onSurface, letterSpacing: -0.5),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        if (isVerified)
-                          Container(
-                            margin: const EdgeInsets.only(left: 6),
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF064E3B).withOpacity(0.5),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Row(
-                              children: const [
-                                Icon(Icons.check_circle, size: 10, color: Color(0xFF34D399)),
-                                SizedBox(width: 3),
-                                Text('VERIFIED', style: TextStyle(color: Color(0xFF34D399), fontSize: 8, fontWeight: FontWeight.w900)),
-                              ],
-                            ),
-                          ),
-                        const SizedBox(width: 8),
-                        Icon(Icons.bookmark_border_rounded, color: theme.colorScheme.onSurfaceVariant, size: 20),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '$company • $location',
-                      style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 13, fontStyle: FontStyle.italic, fontWeight: FontWeight.w500),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('SALARY / RATE', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
-                  const SizedBox(height: 2),
-                  Text(salary, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: Color(0xFF60A5FA))),
-                ],
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text('POSTED', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
-                  const SizedBox(height: 2),
-                  Text(postedTime, style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 13, fontWeight: FontWeight.w500)),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              Expanded(
-                child: SizedBox(
-                  height: 46,
-                  child: ElevatedButton(
-                    onPressed: () {},
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2563EB),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      elevation: 0,
-                    ),
-                    child: const Text('Apply Now', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Container(
-                width: 46,
-                height: 46,
-                decoration: BoxDecoration(
-                  color: theme.cardColor,
-                  border: Border.all(color: theme.colorScheme.outline),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: IconButton(
-                  onPressed: () {},
-                  icon: Icon(Icons.share_rounded, color: theme.colorScheme.onSurface, size: 20),
-                ),
-              ),
-            ],
-          ),
-        ],
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+        decoration: BoxDecoration(
+          color: theme.cardColor,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: theme.colorScheme.outline),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(value, style: TextStyle(color: color, fontWeight: FontWeight.w900, fontSize: 24)),
+            const SizedBox(height: 8),
+            Text(label, style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: 1.0, height: 1.3)),
+          ],
+        ),
       ),
     );
   }

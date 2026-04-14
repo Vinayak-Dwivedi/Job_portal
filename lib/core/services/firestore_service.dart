@@ -13,11 +13,18 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class FirestoreService {
   static final _db = FirebaseFirestore.instance;
 
+  // ── Get User Data ────────────────────────────────────────────────────────
+  static Future<Map<String, dynamic>?> getUser(String uid) async {
+    final doc = await _db.collection('users').doc(uid).get();
+    return doc.exists ? doc.data() : null;
+  }
+
   // ── Save User (Worker OR Employer) ─────────────────────────────────────────
   static Future<void> saveUser(
       String uid, Map<String, dynamic> data) async {
 
     final role = (data['role'] ?? 'worker').toString();
+    final extras = data['extras'] ?? {};
 
     // ── Build user document ────────────────────────────────────────────────
     final Map<String, dynamic> userDoc = {
@@ -27,7 +34,7 @@ class FirestoreService {
       'role':  role,
 
       // Common
-      'bio':             data['bio'] ?? data['description'] ?? '',
+      'bio':             data['bio'] ?? data['description'] ?? extras['bio'] ?? '',
       'profilePhotoUrl': data['profilePhotoUrl'] ?? '',
 
       // Location — stored as map so lat/lng can be added later
@@ -67,6 +74,7 @@ class FirestoreService {
     // ── Employer-specific fields ───────────────────────────────────────────
     if (role == 'employer') {
       userDoc['companyName']  = data['companyName'] ?? data['company'] ?? '';
+      userDoc['contactPersonName'] = data['name'] ?? data['contactPersonName'] ?? '';
       userDoc['businessType'] = data['businessType'] ?? data['industry'] ?? '';
       userDoc['hirerSubType'] = data['hirerSubType'] ?? 'individual';
       userDoc['website']      = data['website'] ?? '';
@@ -94,10 +102,10 @@ class FirestoreService {
     final credSnap = await credRef.get();
     if (!credSnap.exists) {
       await credRef.set({
-        'balance':          0,       // paid credits
-        'freeCreditsUsed':  0,       // how many of the free allowance used
-        'freeLimit':        5,       // new users get 5 free contacts
-        'contactedUIDs':    [],      // re-contacting same user = 0 cost
+        'balance':          50,      // initial credits
+        'freeCreditsUsed':  0,
+        'freeLimit':        0,       // no separate free contacts, just balance
+        'contactedUIDs':    [],
         'subscriptionTier': 'free',
         'subscriptionExpiry': null,
         'createdAt': FieldValue.serverTimestamp(),
@@ -125,23 +133,15 @@ class FirestoreService {
       if (contactedUIDs.contains(targetUid)) return;
 
       int balance = int.tryParse(data['balance']?.toString() ?? '0') ?? 0;
-      int freeUsed = int.tryParse(data['freeCreditsUsed']?.toString() ?? '0') ?? 0;
-      int freeLimit = int.tryParse(data['freeLimit']?.toString() ?? '0') ?? 0;
 
-      if (freeUsed < freeLimit) {
-        // Use free credit
+      if (balance >= 10) {
+        // Use balance
         transaction.update(credRef, {
-          'freeCreditsUsed': FieldValue.increment(1),
-          'contactedUIDs': FieldValue.arrayUnion([targetUid]),
-        });
-      } else if (balance > 0) {
-        // Use paid balance
-        transaction.update(credRef, {
-          'balance': FieldValue.increment(-1),
+          'balance': FieldValue.increment(-10),
           'contactedUIDs': FieldValue.arrayUnion([targetUid]),
         });
       } else {
-        throw Exception("Insufficient credits to unlock contact.");
+        throw Exception("Insufficient credits (10 required) to unlock contact.");
       }
     });
   }

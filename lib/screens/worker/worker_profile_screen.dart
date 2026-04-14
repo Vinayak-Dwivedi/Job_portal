@@ -4,6 +4,10 @@ import 'package:go_router/go_router.dart';
 
 import '../../providers/worker_provider.dart';
 import '../../providers/theme_provider.dart';
+import '../../providers/post_provider.dart';
+import '../../providers/public_user_provider.dart';
+import '../../widgets/feed/post_card.dart';
+
 
 class WorkerProfileScreen extends ConsumerWidget {
   const WorkerProfileScreen({super.key});
@@ -22,366 +26,377 @@ class WorkerProfileScreen extends ConsumerWidget {
       );
     }
 
-    final name = worker.name;
-    final skills = worker.skills;
-    final bio = worker.bio;
-    final rating = worker.rating > 0 ? worker.rating.toStringAsFixed(1) : 'New';
-    final reviews = worker.reviewCount;
-    final location = worker.location.isNotEmpty ? worker.location : 'Location not set';
-    final experience = worker.experience;
+    final userPostsAsync = ref.watch(userPostsProvider(worker.uid));
+    final appliedJobs = ref.watch(workerAppliedJobsProvider);
 
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: theme.colorScheme.onSurface),
-          onPressed: () => context.pop(),
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded, color: theme.colorScheme.onSurface),
-            onPressed: () => ref.read(themeModeProvider.notifier).toggleTheme(),
-          ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // Premium Header with Background
-            Stack(
-              alignment: Alignment.center,
-              children: [
-                Container(
-                  height: 220,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        theme.colorScheme.primary.withOpacity(isDark ? 0.3 : 0.1),
-                        theme.scaffoldBackgroundColor,
-                      ],
-                    ),
-                  ),
+    return DefaultTabController(
+      length: 4,
+      child: Scaffold(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        body: NestedScrollView(
+          headerSliverBuilder: (context, innerBoxIsScrolled) {
+            return [
+              SliverAppBar(
+                expandedHeight: 280,
+                floating: false,
+                pinned: true,
+                backgroundColor: theme.scaffoldBackgroundColor,
+                elevation: 0,
+                leading: IconButton(
+                  icon: Icon(Icons.arrow_back, color: theme.colorScheme.onSurface),
+                  onPressed: () => context.pop(),
                 ),
-                Column(
-                  children: [
-                    const SizedBox(height: 100),
-                    Stack(
-                      alignment: Alignment.bottomRight,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(color: theme.colorScheme.primary, width: 2),
-                          ),
-                          child: CircleAvatar(
-                            radius: 50,
-                            backgroundColor: theme.colorScheme.surfaceVariant,
-                            backgroundImage: (worker.profilePhotoUrl != null && worker.profilePhotoUrl!.isNotEmpty)
-                                ? NetworkImage(worker.profilePhotoUrl!)
-                                : null,
-                            child: (worker.profilePhotoUrl == null || worker.profilePhotoUrl!.isEmpty)
-                                ? Icon(Icons.person, size: 50, color: theme.colorScheme.onSurfaceVariant)
-                                : null,
+                actions: [
+                  IconButton(
+                    icon: Icon(isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded, color: theme.colorScheme.onSurface),
+                    onPressed: () => ref.read(themeModeProvider.notifier).toggleTheme(),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.settings_outlined, color: theme.colorScheme.onSurface),
+                    onPressed: () => context.push('/settings'),
+                  ),
+                ],
+                flexibleSpace: FlexibleSpaceBar(
+                  background: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              theme.colorScheme.primary.withOpacity(isDark ? 0.3 : 0.1),
+                              theme.scaffoldBackgroundColor,
+                            ],
                           ),
                         ),
-                        if (worker.isVerified)
-                          Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: theme.colorScheme.secondary,
-                              shape: BoxShape.circle,
-                              border: Border.all(color: theme.scaffoldBackgroundColor, width: 2),
-                            ),
-                            child: const Icon(Icons.check, color: Colors.white, size: 16),
-                          ),
-                      ],
-                    ),
-                  ],
-                ),
-              ],
-            ),
-
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Column(
-                children: [
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        name,
-                        style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 24, fontWeight: FontWeight.bold),
                       ),
-                      if (worker.isVerified) ...[
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.primary.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: theme.colorScheme.primary.withOpacity(0.2)),
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const SizedBox(height: 40),
+                          Stack(
+                            alignment: Alignment.bottomRight,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  gradient: worker.isVerified 
+                                    ? const LinearGradient(
+                                        colors: [Color(0xFFFBBF24), Color(0xFFF59E0B), Color(0xFFD97706)],
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                      )
+                                    : null,
+                                  border: !worker.isVerified ? Border.all(color: theme.colorScheme.primary, width: 2) : null,
+                                  boxShadow: worker.isVerified 
+                                    ? [BoxShadow(color: const Color(0xFFFBBF24).withOpacity(0.3), blurRadius: 15, spreadRadius: 2)] 
+                                    : [],
+                                ),
+                                child: CircleAvatar(
+                                  radius: 45,
+                                  backgroundColor: theme.colorScheme.surfaceVariant,
+                                  backgroundImage: (worker.profilePhotoUrl != null && worker.profilePhotoUrl!.isNotEmpty)
+                                      ? NetworkImage(worker.profilePhotoUrl!)
+                                      : null,
+                                  child: (worker.profilePhotoUrl == null || worker.profilePhotoUrl!.isEmpty)
+                                      ? Icon(Icons.person, size: 45, color: theme.colorScheme.onSurfaceVariant)
+                                      : null,
+                                ),
+                              ),
+                              if (worker.isVerified)
+                                Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: BoxDecoration(
+                                    gradient: const LinearGradient(colors: [Color(0xFFFBBF24), Color(0xFFF59E0B)]),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: theme.scaffoldBackgroundColor, width: 2.5),
+                                    boxShadow: [
+                                      BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4, offset: const Offset(0, 2))
+                                    ]
+                                  ),
+                                  child: const Icon(Icons.shield_rounded, color: Colors.white, size: 14),
+                                ),
+                            ],
                           ),
-                          child: Text('VERIFIED', style: TextStyle(color: theme.colorScheme.primary, fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
-                        ),
-                      ],
+                          const SizedBox(height: 12),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                worker.name,
+                                style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 22, fontWeight: FontWeight.w900, letterSpacing: -0.5),
+                              ),
+                              if (worker.isVerified) ...[
+                                const SizedBox(width: 8),
+                                const Icon(Icons.verified_rounded, color: Color(0xFFF59E0B), size: 20),
+                              ],
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.star_rounded, color: Colors.amber[600], size: 16),
+                              const SizedBox(width: 4),
+                              Text(
+                                worker.rating > 0 ? worker.rating.toStringAsFixed(1) : 'New',
+                                style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 13),
+                              ),
+                              const SizedBox(width: 4),
+                              Text('•', style: TextStyle(color: theme.colorScheme.onSurfaceVariant)),
+                              const SizedBox(width: 4),
+                              Text('${worker.experience} Exp', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12)),
+                            ],
+                          ),
+                        ],
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.star_rounded, color: Colors.amber[600], size: 18),
-                      const SizedBox(width: 4),
-                      Text(rating, style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 15)),
-                      const SizedBox(width: 4),
-                      Text('•', style: TextStyle(color: theme.colorScheme.onSurfaceVariant)),
-                      const SizedBox(width: 4),
-                      Text('$reviews Reviews', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 14)),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  
-                  // Action Buttons
-                  Row(
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  child: Row(
                     children: [
                       Expanded(
                         child: ElevatedButton(
-                          onPressed: () {}, // Public profile action or Hire
+                          onPressed: () => context.push('/edit-profile'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: theme.colorScheme.primary,
                             foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
                             elevation: 0,
                           ),
-                          child: const Text('Hire Now', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                          child: const Text('Edit Profile', style: TextStyle(fontWeight: FontWeight.bold)),
                         ),
                       ),
                       const SizedBox(width: 12),
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () => context.push('/edit-profile'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: theme.colorScheme.onSurface,
-                            side: BorderSide(color: theme.colorScheme.outline),
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                          ),
-                          child: const Text('Edit Profile', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: theme.cardColor,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: theme.colorScheme.outline),
+                        ),
+                        child: IconButton(
+                          icon: const Icon(Icons.share_outlined),
+                          onPressed: () {},
+                          color: theme.colorScheme.primary,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 32),
-
-                  // About Section
-                  _SectionHeader(title: 'About', theme: theme),
-                  const SizedBox(height: 12),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: theme.cardColor,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: theme.dividerColor.withOpacity(0.05)),
-                    ),
-                    child: Text(
-                      bio.isNotEmpty ? bio : 'No biography provided yet. Tell others about your expertise and experience.',
-                      style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 14, height: 1.6),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Expertise
-                  _SectionHeader(title: 'Expertise', theme: theme),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    child: Wrap(
-                      spacing: 8,
-                      runSpacing: 10,
-                      children: skills.isEmpty 
-                        ? [Text('No skills listed', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 13, fontStyle: FontStyle.italic))]
-                        : skills.map((s) => Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: theme.cardColor,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: theme.colorScheme.primary.withOpacity(0.2)),
-                          ),
-                          child: Text(s, style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 13, fontWeight: FontWeight.w500)),
-                        )).toList(),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Service Area
-                  _SectionHeader(title: 'Service Area', theme: theme),
-                  const SizedBox(height: 12),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: theme.cardColor,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.primary.withOpacity(0.1),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(Icons.location_on_rounded, color: theme.colorScheme.primary, size: 20),
-                        ),
-                        const SizedBox(width: 12),
-                        Text(location, style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 15, fontWeight: FontWeight.w500)),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-
-                  // Stats Row
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _StatCard(
-                          value: '$experience+',
-                          label: 'YEARS EXPERIENCE',
-                          theme: theme,
-                          valueColor: theme.colorScheme.primary,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: _StatCard(
-                          value: '98%',
-                          label: 'JOB COMPLETION',
-                          theme: theme,
-                          valueColor: theme.colorScheme.secondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 32),
-
-                  // Portfolio Preview
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      _SectionHeader(title: 'Portfolio', theme: theme),
-                      TextButton(
-                        onPressed: () {},
-                        child: Text('View All', style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.bold)),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  GridView.count(
-                    padding: EdgeInsets.zero,
-                    crossAxisCount: 2,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                    childAspectRatio: 1.2,
-                    children: [
-                      _PortfolioItem(url: 'https://images.unsplash.com/photo-1540569014015-19a7be504e3a?w=400', theme: theme),
-                      _PortfolioItem(url: 'https://images.unsplash.com/photo-1581092921461-eab62e97a780?w=400', theme: theme),
-                    ],
-                  ),
-                  const SizedBox(height: 48),
-                ],
+                ),
               ),
-            ),
-          ],
+              SliverPersistentHeader(
+                pinned: true,
+                delegate: _SliverAppBarDelegate(
+                  TabBar(
+                    labelColor: theme.colorScheme.primary,
+                    unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
+                    indicatorColor: theme.colorScheme.primary,
+                    indicatorWeight: 3,
+                    labelStyle: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13),
+                    tabs: const [
+                      Tab(text: "ABOUT"),
+                      Tab(text: "POSTS"),
+                      Tab(text: "APPLIED"),
+                      Tab(text: "MY REQUESTS"),
+                    ],
+                  ),
+                  theme.scaffoldBackgroundColor,
+                ),
+              ),
+            ];
+          },
+          body: TabBarView(
+            children: [
+              _buildAboutTab(context, worker, theme, ref),
+              _buildPostsTab(userPostsAsync, theme, false),
+              _buildAppliedTab(appliedJobs, theme),
+              _buildPostsTab(userPostsAsync, theme, true), //Availability Only
+            ],
+          ),
         ),
       ),
     );
   }
-}
 
-class _SectionHeader extends StatelessWidget {
-  final String title;
-  final ThemeData theme;
+  Widget _buildAboutTab(BuildContext context, worker, ThemeData theme, WidgetRef ref) {
 
-  const _SectionHeader({required this.title, required this.theme});
-
-  @override
-  Widget build(BuildContext context) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Text(
-        title,
-        style: TextStyle(
-          color: theme.colorScheme.onSurface,
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-          letterSpacing: -0.5,
-        ),
-      ),
-    );
-  }
-}
-
-class _StatCard extends StatelessWidget {
-  final String value;
-  final String label;
-  final ThemeData theme;
-  final Color valueColor;
-
-  const _StatCard({required this.value, required this.label, required this.theme, required this.valueColor});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 24),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: theme.dividerColor.withOpacity(0.05)),
-      ),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(value, style: TextStyle(color: valueColor, fontSize: 32, fontWeight: FontWeight.w900)),
-          const SizedBox(height: 4),
-          Text(label, style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 10, letterSpacing: 1.2, fontWeight: FontWeight.w800)),
+          // Credits Card
+          ref.watch(userCreditsProvider).when(
+            data: (data) {
+              if (data == null) return const SizedBox.shrink();
+              final balance = int.tryParse(data['balance']?.toString() ?? '0') ?? 0;
+              return Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                margin: const EdgeInsets.only(bottom: 24),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [theme.colorScheme.primary, theme.colorScheme.primary.withAlpha(200)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.wallet, color: Colors.white, size: 32),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Account Credits', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                          Text('$balance Credits', style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                    ),
+                    ElevatedButton(
+                      onPressed: () => context.push('/subscription'), 
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: theme.colorScheme.primary,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      child: const Text('TOP UP'),
+                    ),
+                  ],
+                ),
+              );
+            },
+            loading: () => const SizedBox.shrink(),
+            error: (_, __) => const SizedBox.shrink(),
+          ),
+
+          _sectionHeader('Expertise & Bio', theme),
+          const SizedBox(height: 12),
+          Text(
+            worker.bio.isNotEmpty ? worker.bio : 'No bio provided.',
+            style: TextStyle(color: theme.colorScheme.onSurfaceVariant, height: 1.5),
+          ),
+          const SizedBox(height: 24),
+          
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: (worker.skills as List).map((s) => Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: theme.colorScheme.primary.withOpacity(0.2)),
+              ),
+              child: Text(s, style: TextStyle(color: theme.colorScheme.primary, fontSize: 12, fontWeight: FontWeight.w600)),
+            )).toList(),
+          ),
+          const SizedBox(height: 32),
+
+          _sectionHeader('Contact Information', theme),
+          const SizedBox(height: 12),
+          _contactTile(Icons.email_outlined, 'Email', worker.email ?? 'N/A', theme),
+          _contactTile(Icons.phone_outlined, 'Phone', worker.phone, theme),
+          _contactTile(Icons.location_on_outlined, 'Location', worker.location.isNotEmpty ? worker.location : 'Not set', theme),
+          const SizedBox(height: 40),
         ],
       ),
     );
   }
-}
 
-class _PortfolioItem extends StatelessWidget {
-  final String url;
-  final ThemeData theme;
+  Widget _buildPostsTab(AsyncValue<List<Map<String, dynamic>>> postsAsync, ThemeData theme, bool availabilityOnly) {
+    return postsAsync.when(
+      data: (posts) {
+        final filtered = availabilityOnly 
+            ? posts.where((p) => p['isAvailabilityPost'] == true).toList()
+            : posts.where((p) => p['isAvailabilityPost'] != true).toList();
+            
+        if (filtered.isEmpty) {
+          return Center(child: Text(availabilityOnly ? 'No job requests yet' : 'No posts yet', style: TextStyle(color: theme.colorScheme.onSurfaceVariant)));
+        }
+        return ListView.builder(
+          padding: const EdgeInsets.only(top: 10),
+          itemCount: filtered.length,
+          itemBuilder: (context, index) => PostCard(post: filtered[index]),
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) => Center(child: Text('Error: $e')),
+    );
+  }
 
-  const _PortfolioItem({required this.url, required this.theme});
+  Widget _buildAppliedTab(AsyncValue<List<Map<String, dynamic>>> jobsAsync, ThemeData theme) {
+    return jobsAsync.when(
+      data: (jobs) {
+        if (jobs.isEmpty) {
+          return Center(child: Text('You haven\'t applied to any jobs yet', style: TextStyle(color: theme.colorScheme.onSurfaceVariant)));
+        }
+        return ListView.builder(
+          padding: const EdgeInsets.only(top: 10),
+          itemCount: jobs.length,
+          itemBuilder: (context, index) => PostCard(post: jobs[index]),
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) => Center(child: Text('Error: $e')),
+    );
+  }
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(16),
-        image: DecorationImage(image: NetworkImage(url), fit: BoxFit.cover),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
+  Widget _sectionHeader(String title, ThemeData theme) {
+    return Text(title, style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 16, fontWeight: FontWeight.w900, letterSpacing: -0.5));
+  }
+
+  Widget _contactTile(IconData icon, String label, String value, ThemeData theme) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16.0),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: theme.colorScheme.primary),
+          const SizedBox(width: 16),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 10, fontWeight: FontWeight.bold)),
+              Text(value, style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 14, fontWeight: FontWeight.w600)),
+            ],
           ),
         ],
       ),
     );
+  }
+}
+
+class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
+  _SliverAppBarDelegate(this._tabBar, this.backgroundColor);
+
+  final TabBar _tabBar;
+  final Color backgroundColor;
+
+  @override
+  double get minExtent => _tabBar.preferredSize.height;
+  @override
+  double get maxExtent => _tabBar.preferredSize.height;
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return Container(
+      color: backgroundColor,
+      child: _tabBar,
+    );
+  }
+
+  @override
+  bool shouldRebuild(_SliverAppBarDelegate oldDelegate) {
+    return false;
   }
 }

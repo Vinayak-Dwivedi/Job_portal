@@ -37,6 +37,7 @@ class PostService {
     String? profilePhotoUrl,
     required bool isVerified,
     bool isJobPost = false,
+    bool isAvailabilityPost = false,
     String? jobTitle,
     String? jobSalary,
     String? companyName,
@@ -58,6 +59,7 @@ class PostService {
       'profilePhotoUrl': profilePhotoUrl ?? "",
       'isVerified': isVerified,
       'isJobPost': isJobPost,
+      'isAvailabilityPost': isAvailabilityPost,
       if (jobTitle != null) 'jobTitle': jobTitle,
       if (jobSalary != null) 'jobSalary': jobSalary,
       if (companyName != null) 'companyName': companyName,
@@ -66,6 +68,7 @@ class PostService {
       'createdAt': FieldValue.serverTimestamp(),
     });
   }
+
 
   // 🔥 Get Single Post
   static Future<Map<String, dynamic>?> getPost(String postId) async {

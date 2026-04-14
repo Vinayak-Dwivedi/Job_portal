@@ -4,6 +4,9 @@ import 'package:go_router/go_router.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/employer_provider.dart';
 import '../../providers/theme_provider.dart';
+import '../../providers/public_user_provider.dart';
+import '../../providers/post_provider.dart';
+import '../../widgets/feed/post_card.dart';
 
 class EmployerProfileScreen extends ConsumerWidget {
   const EmployerProfileScreen({super.key});
@@ -11,7 +14,6 @@ class EmployerProfileScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final employer = ref.watch(employerProvider);
-    final authNotifier = ref.read(authProvider.notifier);
     final themeMode = ref.watch(themeModeProvider);
     final isDark = themeMode == ThemeMode.dark;
     final theme = Theme.of(context);
@@ -23,10 +25,12 @@ class EmployerProfileScreen extends ConsumerWidget {
       );
     }
 
+    final userPostsAsync = ref.watch(userPostsProvider(employer.uid));
+
     // Dynamic data
     final companyName = employer.companyName.isNotEmpty ? employer.companyName : 'Company Name';
-    final businessType = employer.businessType.isNotEmpty ? employer.businessType : 'Business Type';
     final bio = employer.bio;
+
     final rating = employer.rating > 0 ? employer.rating.toStringAsFixed(1) : 'New';
     final reviews = employer.reviewCount;
     final officeAddress = employer.officeAddress.isNotEmpty ? employer.officeAddress : 'Address not set';
@@ -54,28 +58,7 @@ class EmployerProfileScreen extends ConsumerWidget {
           ),
           IconButton(
             icon: Icon(Icons.settings_outlined, color: theme.colorScheme.onSurface),
-            onPressed: () {
-               showModalBottomSheet(
-                 context: context,
-                 backgroundColor: theme.cardColor,
-                 shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-                 builder: (context) => SafeArea(
-                   child: Column(
-                     mainAxisSize: MainAxisSize.min,
-                     children: [
-                       ListTile(
-                         leading: const Icon(Icons.logout_rounded, color: Colors.redAccent),
-                         title: const Text('Log Out', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
-                         onTap: () {
-                           Navigator.pop(context); // close sheet
-                           authNotifier.logout();
-                         },
-                       )
-                     ],
-                   ),
-                 )
-               );
-            },
+            onPressed: () => context.push('/settings'),
           ),
         ],
       ),
@@ -110,7 +93,17 @@ class EmployerProfileScreen extends ConsumerWidget {
                           padding: const EdgeInsets.all(4),
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            border: Border.all(color: theme.colorScheme.primary, width: 2),
+                            gradient: employer.isVerified 
+                              ? const LinearGradient(
+                                  colors: [Color(0xFFFBBF24), Color(0xFFF59E0B), Color(0xFFD97706)],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                )
+                              : null,
+                            border: !employer.isVerified ? Border.all(color: theme.colorScheme.primary, width: 2) : null,
+                            boxShadow: employer.isVerified 
+                              ? [BoxShadow(color: const Color(0xFFFBBF24).withOpacity(0.3), blurRadius: 15, spreadRadius: 2)] 
+                              : [],
                           ),
                           child: CircleAvatar(
                             radius: 50,
@@ -130,11 +123,14 @@ class EmployerProfileScreen extends ConsumerWidget {
                           Container(
                             padding: const EdgeInsets.all(4),
                             decoration: BoxDecoration(
-                              color: theme.colorScheme.secondary,
+                              gradient: const LinearGradient(colors: [Color(0xFFFBBF24), Color(0xFFF59E0B)]),
                               shape: BoxShape.circle,
-                              border: Border.all(color: theme.scaffoldBackgroundColor, width: 2),
+                              border: Border.all(color: theme.scaffoldBackgroundColor, width: 2.5),
+                              boxShadow: [
+                                BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4, offset: const Offset(0, 2))
+                              ]
                             ),
-                            child: const Icon(Icons.check, color: Colors.white, size: 16),
+                            child: const Icon(Icons.shield_rounded, color: Colors.white, size: 16),
                           ),
                       ],
                     ),
@@ -148,13 +144,25 @@ class EmployerProfileScreen extends ConsumerWidget {
               child: Column(
                 children: [
                   const SizedBox(height: 16),
-                  Text(
-                    companyName,
-                    style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 24, fontWeight: FontWeight.bold),
-                    textAlign: TextAlign.center,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          companyName,
+                          style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: -0.5),
+                          textAlign: TextAlign.center,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (employer.isVerified) ...[
+                        const SizedBox(width: 8),
+                        const Icon(Icons.verified_rounded, color: Color(0xFFF59E0B), size: 24),
+                      ],
+                    ],
                   ),
                   const SizedBox(height: 8),
-                  Container(
+                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                     decoration: BoxDecoration(
                       color: theme.colorScheme.primary.withOpacity(0.1),
@@ -162,26 +170,124 @@ class EmployerProfileScreen extends ConsumerWidget {
                       border: Border.all(color: theme.colorScheme.primary.withOpacity(0.2)),
                     ),
                     child: Text(
-                      businessType.toUpperCase(),
+                      employer.hirerSubType.toUpperCase(),
                       style: TextStyle(color: theme.colorScheme.primary, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 0.5),
                     ),
                   ),
+
                   const SizedBox(height: 12),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(Icons.star_rounded, color: Colors.amber[600], size: 18),
                       const SizedBox(width: 4),
-                      Text(rating, style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 15)),
+                      Text(rating, style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 13)),
                       const SizedBox(width: 4),
                       Text('•', style: TextStyle(color: theme.colorScheme.onSurfaceVariant)),
                       const SizedBox(width: 4),
-                      Text('$reviews Ratings', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 14)),
-                      const SizedBox(width: 8),
-                      Icon(Icons.location_on_rounded, color: theme.colorScheme.onSurfaceVariant, size: 14),
+                      Text('$reviews Ratings', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12)),
+                      const SizedBox(width: 12),
+                      Container(width: 1, height: 12, color: theme.dividerColor.withOpacity(0.2)),
+                      const SizedBox(width: 12),
+                      Icon(Icons.location_on_rounded, color: theme.colorScheme.primary, size: 14),
                       const SizedBox(width: 4),
-                      Text(officeAddress.split(',').last.trim(), style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 14)),
+                      Flexible(
+                        child: Text(
+                          officeAddress.isNotEmpty ? officeAddress.split(',').last.trim() : 'Location set',
+                          style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12, fontWeight: FontWeight.w500),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                     ],
+                  ),
+                  const SizedBox(height: 24),
+
+                  // ── Credits Box ──────────────────────────────────────────
+                  ref.watch(userCreditsProvider).when(
+                    data: (data) {
+                      if (data == null) return const SizedBox.shrink();
+                      final balance = int.tryParse(data['balance']?.toString() ?? '0') ?? 0;
+
+                      return Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        margin: const EdgeInsets.only(bottom: 24),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [theme.colorScheme.primary, theme.colorScheme.primary.withOpacity(0.8)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: theme.colorScheme.primary.withOpacity(0.3),
+                              blurRadius: 12,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.2),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.account_balance_wallet_rounded, color: Colors.white, size: 24),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text('Recruitment Credits', style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w600)),
+                                  const SizedBox(height: 2),
+                                  Text('$balance Credits Available', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900)),
+                                ],
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: () => context.push('/subscription'),
+                              style: TextButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                foregroundColor: theme.colorScheme.primary,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              ),
+                              child: const Text('Top Up', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                    loading: () => const SizedBox.shrink(),
+                    error: (_, __) => const SizedBox.shrink(),
+                  ),
+                  
+                  // ── Account Details Section ─────────────────────────────
+                  _SectionHeader(title: 'Account Information', theme: theme),
+                  const SizedBox(height: 12),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: theme.cardColor,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: theme.dividerColor.withOpacity(0.05)),
+                    ),
+                    child: Column(
+                      children: [
+                        _buildAccountRow(Icons.person_outline_rounded, 'Contact Person', employer.contactPersonName, theme),
+                        const Divider(height: 24),
+                        _buildAccountRow(Icons.business_rounded, 'Company Name', companyName, theme),
+                        const Divider(height: 24),
+                        _buildAccountRow(Icons.email_outlined, 'Email Address', employer.email ?? 'Not provided', theme),
+                        const Divider(height: 24),
+                        _buildAccountRow(Icons.phone_android_rounded, 'Phone Number', employer.phone, theme),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 24),
                   
@@ -190,7 +296,7 @@ class EmployerProfileScreen extends ConsumerWidget {
                     children: [
                       Expanded(
                         child: ElevatedButton(
-                          onPressed: () {}, // Action to find workers
+                          onPressed: () => context.push('/profile/employer/${employer.uid}'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: theme.colorScheme.primary,
                             foregroundColor: Colors.white,
@@ -198,14 +304,7 @@ class EmployerProfileScreen extends ConsumerWidget {
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                             elevation: 0,
                           ),
-                          child: const Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.person_search_rounded, size: 18),
-                              SizedBox(width: 8),
-                              Text('Find Workers', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                            ],
-                          ),
+                          child: const Text('View Public Profile', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -219,30 +318,6 @@ class EmployerProfileScreen extends ConsumerWidget {
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                           ),
                           child: const Text('Edit Profile', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 32),
-
-                  // Stats Row
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _StatCard(
-                          value: '12',
-                          label: 'ACTIVE POSTS',
-                          theme: theme,
-                          valueColor: theme.colorScheme.primary,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: _StatCard(
-                          value: '45',
-                          label: 'WORKERS HIRED',
-                          theme: theme,
-                          valueColor: theme.colorScheme.secondary,
                         ),
                       ),
                     ],
@@ -265,43 +340,28 @@ class EmployerProfileScreen extends ConsumerWidget {
                       style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 14, height: 1.6),
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 32),
 
-                  // Active Jobs Section
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      _SectionHeader(title: 'Active Jobs', theme: theme),
-                      TextButton(
-                        onPressed: () {},
-                        child: Text('See All', style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.bold)),
-                      ),
-                    ],
+                  // ── My Posts & Activity ──────────────────────────────
+                  _SectionHeader(title: 'My Posts & Activity', theme: theme),
+                  const SizedBox(height: 16),
+                  userPostsAsync.when(
+                    data: (posts) {
+                      if (posts.isEmpty) {
+                        return Center(child: Padding(padding: const EdgeInsets.all(20), child: Text('You haven\'t posted anything yet', style: TextStyle(color: theme.colorScheme.onSurfaceVariant))));
+                      }
+                      return ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: posts.length,
+                        itemBuilder: (context, index) {
+                          return PostCard(post: posts[index]);
+                        },
+                      );
+                    },
+                    loading: () => const Center(child: CircularProgressIndicator()),
+                    error: (e, __) => Center(child: Text('Error loading posts: $e', style: const TextStyle(color: Colors.red))),
                   ),
-                  const SizedBox(height: 12),
-                  _JobCard(
-                    title: 'Master Carpenter',
-                    type: 'Full-time',
-                    salary: '₹28k - 35k',
-                    applicants: 42,
-                    theme: theme,
-                    isUrgent: true,
-                  ),
-                  _JobCard(
-                    title: 'Industrial Electrician',
-                    type: 'Contract',
-                    salary: '₹32k - 40k',
-                    applicants: 12,
-                    theme: theme,
-                    isUrgent: false,
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Documents Section
-                  _SectionHeader(title: 'Verified Documents', theme: theme),
-                  const SizedBox(height: 12),
-                  _DocCard(title: 'GST Registration', theme: theme),
-                  _DocCard(title: 'Business License', theme: theme),
                   
                   const SizedBox(height: 48),
                 ],
@@ -310,6 +370,30 @@ class EmployerProfileScreen extends ConsumerWidget {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildAccountRow(IconData icon, String label, String value, ThemeData theme) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.primary.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: theme.colorScheme.primary, size: 20),
+        ),
+        const SizedBox(width: 16),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label, style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 11, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 2),
+            Text(value, style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 14, fontWeight: FontWeight.bold)),
+          ],
+        ),
+      ],
     );
   }
 }
@@ -332,126 +416,6 @@ class _SectionHeader extends StatelessWidget {
           fontWeight: FontWeight.bold,
           letterSpacing: -0.5,
         ),
-      ),
-    );
-  }
-}
-
-class _StatCard extends StatelessWidget {
-  final String value;
-  final String label;
-  final ThemeData theme;
-  final Color valueColor;
-
-  const _StatCard({required this.value, required this.label, required this.theme, required this.valueColor});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 24),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: theme.dividerColor.withOpacity(0.05)),
-      ),
-      child: Column(
-        children: [
-          Text(value, style: TextStyle(color: valueColor, fontSize: 32, fontWeight: FontWeight.w900)),
-          const SizedBox(height: 4),
-          Text(label, style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 10, letterSpacing: 1.2, fontWeight: FontWeight.w800)),
-        ],
-      ),
-    );
-  }
-}
-
-class _JobCard extends StatelessWidget {
-  final String title;
-  final String type;
-  final String salary;
-  final int applicants;
-  final ThemeData theme;
-  final bool isUrgent;
-
-  const _JobCard({required this.title, required this.type, required this.salary, required this.applicants, required this.theme, required this.isUrgent});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: theme.dividerColor.withOpacity(0.05)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(title, style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 16, fontWeight: FontWeight.bold)),
-              if (isUrgent)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.orange.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Text('URGENT', style: TextStyle(color: Colors.orange, fontSize: 9, fontWeight: FontWeight.w900)),
-                ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Icon(Icons.work_history_outlined, color: theme.colorScheme.onSurfaceVariant, size: 14),
-              const SizedBox(width: 6),
-              Text(type, style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 13)),
-              const SizedBox(width: 16),
-              Icon(Icons.currency_rupee_rounded, color: theme.colorScheme.onSurfaceVariant, size: 14),
-              const SizedBox(width: 4),
-              Text(salary, style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 13)),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('$applicants Applicants', style: TextStyle(color: theme.colorScheme.primary, fontSize: 12, fontWeight: FontWeight.bold)),
-              Icon(Icons.arrow_forward_rounded, color: theme.colorScheme.onSurfaceVariant, size: 18),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _DocCard extends StatelessWidget {
-  final String title;
-  final ThemeData theme;
-
-  const _DocCard({required this.title, required this.theme});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      margin: const EdgeInsets.only(bottom: 10),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.verified_user_rounded, color: theme.colorScheme.secondary, size: 20),
-          const SizedBox(width: 12),
-          Text(title, style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 14, fontWeight: FontWeight.w600)),
-          const Spacer(),
-          Icon(Icons.check_circle_rounded, color: Colors.green.shade400, size: 18),
-        ],
       ),
     );
   }

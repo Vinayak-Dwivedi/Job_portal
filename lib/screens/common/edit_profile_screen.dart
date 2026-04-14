@@ -21,6 +21,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   String _role = 'worker';
   
   final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
   final TextEditingController _bioController = TextEditingController();
   final TextEditingController _experienceController = TextEditingController();
@@ -50,6 +51,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         final data = userDoc.data()!;
         _role = data['role'] ?? 'worker';
         _nameController.text = data['name'] ?? '';
+        _emailController.text = data['email'] ?? '';
         _bioController.text = data['bio'] ?? '';
         
         final loc = data['location'];
@@ -92,6 +94,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     try {
       final Map<String, dynamic> updateData = {
         'name': _nameController.text.trim(),
+        'email': _emailController.text.trim(),
         'bio': _bioController.text.trim(),
         'location': {
           'address': _addressController.text.trim(),
@@ -178,6 +181,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   @override
   void dispose() {
     _nameController.dispose();
+    _emailController.dispose();
     _addressController.dispose();
     _bioController.dispose();
     _experienceController.dispose();
@@ -214,9 +218,48 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Center(
+                child: Stack(
+                  alignment: Alignment.bottomRight,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: theme.colorScheme.primary.withOpacity(0.5), width: 2),
+                      ),
+                      child: CircleAvatar(
+                        radius: 50,
+                        backgroundColor: theme.colorScheme.surfaceVariant,
+                        backgroundImage: null, // Placeholder since we aren't handling files yet
+                        child: Icon(Icons.person_rounded, size: 50, color: theme.colorScheme.onSurfaceVariant),
+                      ),
+                    ),
+                    InkWell(
+                      onTap: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Firebase Storage not enabled. Placeholder implementation only.')),
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.primary,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: theme.scaffoldBackgroundColor, width: 2),
+                        ),
+                        child: const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 16),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 32),
               _buildSectionTitle('Basic Information', theme),
               const SizedBox(height: 16),
               _buildTextField('Full Name', _nameController, theme, isRequired: true, icon: Icons.person_outline),
+              const SizedBox(height: 16),
+              _buildTextField('Email Address', _emailController, theme, icon: Icons.email_outlined, keyboardType: TextInputType.emailAddress),
               const SizedBox(height: 16),
               _buildTextField('About / Bio', _bioController, theme, maxLines: 5, icon: Icons.description_outlined),
               const SizedBox(height: 16),
@@ -369,7 +412,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     );
   }
 
-  Widget _buildTextField(String label, TextEditingController controller, ThemeData theme, {bool isRequired = false, bool isNumber = false, int maxLines = 1, IconData? icon}) {
+  Widget _buildTextField(String label, TextEditingController controller, ThemeData theme, {bool isRequired = false, bool isNumber = false, int maxLines = 1, IconData? icon, TextInputType? keyboardType}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -379,7 +422,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           controller: controller,
           maxLines: maxLines,
           style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 15),
-          keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+          keyboardType: keyboardType ?? (isNumber ? TextInputType.number : TextInputType.text),
           validator: isRequired ? (value) {
             if (value == null || value.trim().isEmpty) return 'This field is required';
             return null;

@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../providers/worker_provider.dart';
+import '../../providers/post_provider.dart';
+import '../../widgets/feed/post_card.dart';
+
 
 class WorkerJobsScreen extends ConsumerStatefulWidget {
   const WorkerJobsScreen({super.key});
@@ -100,7 +103,7 @@ class _WorkerJobsScreenState extends ConsumerState<WorkerJobsScreen>
                     dividerColor: Colors.transparent,
                     labelStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
                     unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
-                    tabs: const [Tab(text: 'Applied'), Tab(text: 'Ongoing'), Tab(text: 'Archive')],
+                    tabs: const [Tab(text: 'New Jobs'), Tab(text: 'Applied'), Tab(text: 'Ongoing')],
                   ),
                 ),
               ],
@@ -112,63 +115,81 @@ class _WorkerJobsScreenState extends ConsumerState<WorkerJobsScreen>
             child: TabBarView(
               controller: _tabController,
               children: [
+                _buildNewJobsTab(),
                 _buildAppliedTab(),
                 _buildPlaceholderTab('No active engagements.', Icons.handshake_rounded),
-                _buildPlaceholderTab('No past history.', Icons.archive_rounded),
               ],
             ),
           ),
+
         ],
       ),
     );
   }
 
-  Widget _buildAppliedTab() {
-    return ListView(
-      padding: const EdgeInsets.all(20.0),
-      children: [
-        _SuccessRateCard().animate().fadeIn(delay: 200.ms).slideY(begin: 0.1, end: 0),
-        const SizedBox(height: 24),
-        
-        Text('RECENT APPLICATIONS', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1.2)),
-        const SizedBox(height: 16),
-        
-        const _JobCard(
-          title: 'Senior Site Electrician',
-          company: 'Bright Spark Constructions',
-          status: 'Interviewing',
-          time: '2d ago',
-          statusColor: Color(0xFF34D399), // Bright emerald
-          logoIcon: Icons.bolt_rounded,
-        ).animate().fadeIn(delay: 400.ms).slideX(begin: 0.1, end: 0),
-        
-        const SizedBox(height: 16),
-        
-        const _JobCard(
-          title: 'Master Carpenter',
-          company: 'WoodCraft Interiors',
-          status: 'Pending Review',
-          time: '5h ago',
-          statusColor: Color(0xFFFBBF24), // Bright amber
-          logoIcon: Icons.chair_rounded,
-        ).animate().fadeIn(delay: 600.ms).slideX(begin: 0.1, end: 0),
-        
-        const SizedBox(height: 16),
-        
-        const _JobCard(
-          title: 'Maintenance Lead',
-          company: 'Apex Residential',
-          status: 'Rejected',
-          time: '1w ago',
-          statusColor: Color(0xFFF87171), // Bright red
-          logoIcon: Icons.build_rounded,
-          isRejected: true,
-        ).animate().fadeIn(delay: 800.ms).slideX(begin: 0.1, end: 0),
-        
-        const SizedBox(height: 32),
-      ],
+  Widget _buildNewJobsTab() {
+    final jobsAsyncValue = ref.watch(jobFeedProvider);
+
+    return jobsAsyncValue.when(
+      data: (jobs) {
+        if (jobs.isEmpty) {
+          return _buildPlaceholderTab('No new jobs available.', Icons.search_off_rounded);
+        }
+        return ListView.builder(
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          itemCount: jobs.length,
+          itemBuilder: (context, index) {
+            return PostCard(post: jobs[index]).animate().fadeIn(delay: (index * 100).ms).slideY(begin: 0.1, end: 0);
+          },
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (err, stack) => Center(child: Text('Error: $err', style: const TextStyle(color: Colors.red))),
     );
   }
+
+  Widget _buildAppliedTab() {
+    final jobsAsync = ref.watch(workerAppliedJobsProvider);
+
+    return jobsAsync.when(
+      data: (jobs) => ListView(
+        padding: const EdgeInsets.all(20.0),
+        children: [
+          _SuccessRateCard().animate().fadeIn(delay: 200.ms).slideY(begin: 0.1, end: 0),
+          const SizedBox(height: 24),
+          Text('MY APPLICATIONS', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1.2)),
+          const SizedBox(height: 16),
+          if (jobs.isEmpty)
+            _buildSmallPlaceholder('No applications yet.', Icons.history_rounded)
+          else
+            ...jobs.map((job) => Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: PostCard(post: job).animate().fadeIn().slideX(begin: 0.1, end: 0),
+            )),
+          const SizedBox(height: 32),
+        ],
+      ),
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) => Center(child: Text('Error: $e')),
+    );
+  }
+
+
+  Widget _buildSmallPlaceholder(String message, IconData icon) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(40.0),
+        child: Column(
+          children: [
+            Icon(icon, color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.3), size: 40),
+            const SizedBox(height: 12),
+            Text(message, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13, fontWeight: FontWeight.w500)),
+          ],
+        ),
+      ),
+    );
+  }
+
 
   Widget _buildPlaceholderTab(String message, IconData icon) {
     return Center(
@@ -188,101 +209,7 @@ class _WorkerJobsScreenState extends ConsumerState<WorkerJobsScreen>
   }
 }
 
-class _JobCard extends StatelessWidget {
-  final String title, company, status, time;
-  final Color statusColor;
-  final IconData logoIcon;
-  final bool isRejected;
 
-  const _JobCard({
-    required this.title,
-    required this.company,
-    required this.status,
-    required this.time,
-    required this.statusColor,
-    required this.logoIcon,
-    this.isRejected = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: theme.dividerColor),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(theme.brightness == Brightness.dark ? 0.2 : 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          )
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 44, height: 44,
-                decoration: BoxDecoration(color: statusColor.withOpacity(0.15), borderRadius: BorderRadius.circular(12)),
-                child: Icon(logoIcon, color: statusColor, size: 24),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title, style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: isRejected ? theme.colorScheme.onSurfaceVariant : theme.colorScheme.onSurface)),
-                    Text(company, style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 13, fontWeight: FontWeight.w500)),
-                  ],
-                ),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(color: statusColor.withOpacity(0.15), borderRadius: BorderRadius.circular(8)),
-                    child: Text(status.toUpperCase(), style: TextStyle(color: statusColor, fontSize: 9, fontWeight: FontWeight.w900)),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(time, style: TextStyle(color: theme.colorScheme.onSurfaceVariant.withOpacity(0.6), fontSize: 10, fontWeight: FontWeight.w600)),
-                ],
-              ),
-            ],
-          ),
-          if (isRejected) ...[
-            Padding(
-              padding: const EdgeInsets.only(top: 16.0),
-              child: Divider(color: theme.dividerColor),
-            ),
-            Text(
-              'Position filled. Keep applying to stay on top!',
-              style: TextStyle(color: theme.colorScheme.onSurfaceVariant.withOpacity(0.8), fontSize: 11, fontWeight: FontWeight.w500),
-            ),
-          ],
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton(
-              onPressed: () {},
-              style: OutlinedButton.styleFrom(
-                side: BorderSide(color: theme.dividerColor),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                padding: const EdgeInsets.symmetric(vertical: 12),
-              ),
-              child: Text('View Status Details', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: theme.colorScheme.onSurface)),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 class _SuccessRateCard extends StatelessWidget {
   @override

@@ -8,14 +8,6 @@ class KIBottomNavBar extends ConsumerWidget {
 
   const KIBottomNavBar({super.key, required this.currentIndex});
 
-  static const _items = [
-    _NavItem(icon: Icons.home_rounded, label: 'Home'),
-    _NavItem(icon: Icons.work_outline_rounded, label: 'Jobs'),
-    _NavItem(icon: null, label: 'Post'), // FAB center slot
-    _NavItem(icon: Icons.card_membership_rounded, label: 'Subscription'),
-    _NavItem(icon: Icons.person_outline_rounded, label: 'Profile'),
-  ];
-
   void _onTap(WidgetRef ref, BuildContext context, int index) {
     if (index == currentIndex) return;
     
@@ -26,17 +18,13 @@ class KIBottomNavBar extends ConsumerWidget {
         context.go(role == 'employer' ? '/employer/dashboard' : '/worker/dashboard');
         break;
       case 1:
-        context.go(role == 'employer' ? '/employer/my-jobs' : '/worker/jobs');
+        context.go(role == 'employer' ? '/employer/workers' : '/worker/jobs');
         break;
       case 2:
         context.push('/feed');
         break;
       case 3:
-        context.push('/subscription-plans'); // Push overlay or go? Go usually if tab. 
-        // We'll use go('/subscription-plans') if we want it as a tab, but it doesn't have a shell route. 
-        // Wait, if we use go and it has no shell route, the bottom nav disappears. Let's make it a general push if it's not in the shell, OR add it to the shell.
-        // Actually, the user says "subscription opens subscirption page for both workers and employers".
-        context.push('/subscription-plans'); 
+        context.go(role == 'employer' ? '/employer/my-jobs' : '/worker/subscriptions');
         break;
       case 4:
         context.go(role == 'employer' ? '/employer/profile' : '/worker/profile');
@@ -47,7 +35,22 @@ class KIBottomNavBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final role = ref.watch(authProvider)?.role ?? 'worker';
     
+    final List<_NavItem> items = [
+      const _NavItem(icon: Icons.home_rounded, label: 'Home'),
+      _NavItem(
+        icon: role == 'employer' ? Icons.people_outline_rounded : Icons.work_outline_rounded, 
+        label: role == 'employer' ? 'Workers' : 'Jobs'
+      ),
+      const _NavItem(icon: null, label: 'Post'), // FAB center slot
+      _NavItem(
+        icon: role == 'employer' ? Icons.assignment_outlined : Icons.card_membership_rounded, 
+        label: role == 'employer' ? 'My Jobs' : 'Sub'
+      ),
+      const _NavItem(icon: Icons.person_outline_rounded, label: 'Profile'),
+    ];
+
     return Container(
       decoration: BoxDecoration(
         color: theme.cardColor,
@@ -60,7 +63,7 @@ class KIBottomNavBar extends ConsumerWidget {
         child: SizedBox(
           height: 64,
           child: Row(
-            children: List.generate(_items.length, (i) {
+            children: List.generate(items.length, (i) {
               // Center FAB slot
               if (i == 2) {
                 return Expanded(
@@ -104,7 +107,7 @@ class KIBottomNavBar extends ConsumerWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
-                          _items[i].icon,
+                          items[i].icon,
                           color: selected
                               ? theme.colorScheme.primary
                               : theme.colorScheme.onSurfaceVariant,
@@ -112,7 +115,7 @@ class KIBottomNavBar extends ConsumerWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          _items[i].label,
+                          items[i].label,
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: selected

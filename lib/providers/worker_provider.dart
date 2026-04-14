@@ -23,7 +23,7 @@ class WorkerNotifier extends Notifier<WorkerModel?> {
       skills: skill.isNotEmpty ? [skill] : [],
       experience: int.tryParse(experience) ?? 0,
       location: 'India',
-      credits: 20,
+      credits: 50,
     );
   }
 
@@ -50,18 +50,7 @@ class WorkerNotifier extends Notifier<WorkerModel?> {
         if (skillsList is List) {
           parsedSkills = List<String>.from(skillsList);
         }
-        state = WorkerModel(
-          uid: uid,
-          name: (data['name'] ?? '').toString(),
-          phone: (data['phone'] ?? '').toString(),
-          isVerified: true,
-          jobCategory: 'blue_collar',
-          jobTitles: parsedSkills.isNotEmpty ? [parsedSkills.first] : [],
-          skills: parsedSkills,
-          experience: int.tryParse(data['experience']?.toString() ?? '0') ?? 0,
-          location: data['location'] is Map ? (data['location']['address'] ?? 'India').toString() : 'India',
-          credits: 20,
-        );
+        state = WorkerModel.fromMap(data, uid);
       } else {
         // 🆕 Handle new user WITHOUT a document (fallback)
         print("ℹ️ Worker Profile document not found, initializing basic state");
@@ -69,13 +58,13 @@ class WorkerNotifier extends Notifier<WorkerModel?> {
           uid: uid,
           name: 'Worker',
           phone: '',
-          isVerified: true,
+          isVerified: false, // Default to false
           jobCategory: 'blue_collar',
           jobTitles: [],
           skills: [],
           experience: 0,
-          location: 'India',
-          credits: 20,
+          location: 'Not set',
+          credits: 50,
         );
       }
     } catch (e) {

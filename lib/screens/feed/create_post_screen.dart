@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/services/post_service.dart';
-import '../../widgets/feed/post_pending_banner.dart';
+// import '../../widgets/feed/post_pending_banner.dart';
 import '../../providers/worker_provider.dart';
 import '../../providers/employer_provider.dart';
 import '../../providers/auth_provider.dart';
@@ -26,6 +26,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
   final List<File> _selectedImages = [];
   bool _isLoading = false;
   bool _isJobPost = false;
+  bool _isAvailabilityPost = false;
 
   Future<void> _pickImages() async {
     if (_selectedImages.length >= 1) {
@@ -120,16 +121,16 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
         imageFiles: _selectedImages,
         profilePhotoUrl: photoUrl,
         isVerified: isVerified,
-        location: _isJobPost ? _jobLocationController.text.trim() : 'Current Location',
+        location: (_isJobPost || _isAvailabilityPost) ? _jobLocationController.text.trim() : 'Current Location',
         isJobPost: _isJobPost,
-        jobTitle: _isJobPost ? _jobTitleController.text.trim() : null,
-        jobSalary: _isJobPost ? _jobSalaryController.text.trim() : null,
+        isAvailabilityPost: _isAvailabilityPost,
+        jobTitle: (_isJobPost || _isAvailabilityPost) ? _jobTitleController.text.trim() : null,
+        jobSalary: (_isJobPost || _isAvailabilityPost) ? _jobSalaryController.text.trim() : null,
         companyName: _isJobPost ? (employerCompany?.isNotEmpty == true ? employerCompany : name) : null,
       );
 
       if (mounted) {
         context.pop();
-        // showPostPendingBanner(context); // Optional: if we want a banner
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -251,12 +252,16 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                     autofocus: true,
                     style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 18, height: 1.5),
                     decoration: InputDecoration(
-                      hintText: _isJobPost ? 'Describe the job requirements...' : 'What do you want to talk about?',
+                      hintText: (_isJobPost || _isAvailabilityPost) 
+                        ? (isWorker ? 'Tell employers why they should hire you...' : 'Describe the job requirements...') 
+                        : 'What do you want to talk about?',
                       hintStyle: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 18),
                       border: InputBorder.none,
                     ),
                   ),
                   const SizedBox(height: 16),
+                  
+                  // Role-specific toggles
                   if (!isWorker)
                     Container(
                       margin: const EdgeInsets.only(bottom: 16),
@@ -268,20 +273,54 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                       child: SwitchListTile(
                         value: _isJobPost,
                         onChanged: (val) {
-                          setState(() => _isJobPost = val);
+                          setState(() {
+                            _isJobPost = val;
+                            if (val) _isAvailabilityPost = false;
+                          });
                         },
                         title: Text('Post as a Job', style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.bold)),
                         subtitle: Text('Will be featured in workers recommended jobs', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12)),
                         activeColor: AppColors.primary,
                       ),
                     ),
-                  if (!isWorker && _isJobPost)
+                    
+                  if (isWorker)
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: theme.cardColor,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: theme.colorScheme.outline),
+                      ),
+                      child: SwitchListTile(
+                        value: _isAvailabilityPost,
+                        onChanged: (val) {
+                          setState(() {
+                            _isAvailabilityPost = val;
+                            if (val) _isJobPost = false;
+                          });
+                        },
+                        title: Text('List as available for work', style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.bold)),
+                        subtitle: Text('Tell employers about your skills and expected pay', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12)),
+                        activeColor: AppColors.primary,
+                      ),
+                    ),
+
+                  if (_isJobPost || _isAvailabilityPost)
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildJobField('Job Title (e.g. Senior Welder)', _jobTitleController, theme),
+                        _buildJobField(
+                          isWorker ? 'Position / Expertise (e.g. Senior Welder)' : 'Job Title (e.g. Senior Welder)', 
+                          _jobTitleController, 
+                          theme
+                        ),
                         const SizedBox(height: 12),
-                        _buildJobField('Salary / Rate (e.g. ₹35,000/mo)', _jobSalaryController, theme),
+                        _buildJobField(
+                          isWorker ? 'Expected Pay (e.g. ₹35,000/mo)' : 'Salary / Rate (e.g. ₹35,000/mo)', 
+                          _jobSalaryController, 
+                          theme
+                        ),
                         const SizedBox(height: 12),
                         _buildJobField('Location (e.g. Mumbai, MH)', _jobLocationController, theme),
                         const SizedBox(height: 16),

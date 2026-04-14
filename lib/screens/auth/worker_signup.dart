@@ -37,11 +37,6 @@ class PrimaryButton extends StatelessWidget {
     );
   }
 }
-// ─────────────────────────────────────────────────────────────────────────────
-
-/// All available skill categories shown as chips.
-
-
 
 class WorkerSignupScreen extends ConsumerStatefulWidget {
   const WorkerSignupScreen({super.key});
@@ -56,38 +51,35 @@ class _WorkerSignupScreenState extends ConsumerState<WorkerSignupScreen> {
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
+  final _bioController = TextEditingController();
   List<String> _skills = [];
-bool _isLoading = true;
+  bool _isLoading = true;
 
-@override
-void initState() {
-  super.initState();
-  fetchSkills();
-}
+  @override
+  void initState() {
+    super.initState();
+    fetchSkills();
+  }
 
-Future<void> fetchSkills() async {
-  final snapshot = await FirebaseFirestore.instance
-      .collection('job_categories')
-      .where('isActive', isEqualTo: true)
-      .get();
+  Future<void> fetchSkills() async {
+    final snapshot = await FirebaseFirestore.instance
+        .collection('job_categories')
+        .where('isActive', isEqualTo: true)
+        .get();
 
-  final skills = snapshot.docs
-      .map((doc) => doc['name'].toString())
-      .toList();
+    final skills = snapshot.docs
+        .map((doc) => doc['name'].toString())
+        .toList();
 
-  setState(() {
-    _skills = skills;
-    _selectedSkill = skills.isNotEmpty ? skills[0] : '';
-    _isLoading = false;
-  });
-}
-  /// Skill selected via dropdown (single selection, matching request)
+    setState(() {
+      _skills = skills;
+      _selectedSkill = skills.isNotEmpty ? skills[0] : '';
+      _isLoading = false;
+    });
+  }
+
   String _selectedSkill = '';
-
-  /// Experience in years
   int _experience = 0;
-
-  /// Location label shown in the map card
   String _locationLabel = 'Andheri East, Mumbai';
 
   void _submitForm() {
@@ -99,6 +91,7 @@ Future<void> fetchSkills() async {
         'skill': _selectedSkill,
         'experience': _experience.toString(),
         'email': _emailController.text.trim(),
+        'bio': _bioController.text.trim(),
         'location': _locationLabel,
       });
     }
@@ -109,10 +102,10 @@ Future<void> fetchSkills() async {
     _nameController.dispose();
     _phoneController.dispose();
     _emailController.dispose();
+    _bioController.dispose();
     super.dispose();
   }
 
-  // ── Reusable label widget ────────────────────────────────────────────────
   Widget _sectionLabel(String text, Color accentColor) {
     return Row(
       children: [
@@ -134,7 +127,6 @@ Future<void> fetchSkills() async {
     );
   }
 
-  // ── Styled text field ────────────────────────────────────────────────────
   Widget _textField({
     required String label,
     required String hint,
@@ -142,6 +134,7 @@ Future<void> fetchSkills() async {
     TextInputType keyboardType = TextInputType.text,
     String? Function(String?)? validator,
     Widget? prefixWidget,
+    int maxLines = 1,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -153,6 +146,7 @@ Future<void> fetchSkills() async {
           controller: controller,
           keyboardType: keyboardType,
           validator: validator,
+          maxLines: maxLines,
           style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
           decoration: InputDecoration(
             hintText: hint,
@@ -169,7 +163,7 @@ Future<void> fetchSkills() async {
               borderSide: const BorderSide(color: Colors.redAccent),
             ),
             contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                 EdgeInsets.symmetric(horizontal: 16, vertical: maxLines > 1 ? 16 : 0),
           ),
         ),
       ],
@@ -189,7 +183,6 @@ Future<void> fetchSkills() async {
           icon: Icon(Icons.arrow_back, color: theme.colorScheme.onSurface),
           onPressed: () => context.pop(),
         ),
-        // ── Step indicator ──────────────────────────────────────────────
         title: _StepIndicator(current: 1, total: 3),
         centerTitle: true,
       ),
@@ -200,7 +193,6 @@ Future<void> fetchSkills() async {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ── Heading ────────────────────────────────────────────────
               Text(
                 "Create Your Profile",
                 style: TextStyle(
@@ -215,11 +207,9 @@ Future<void> fetchSkills() async {
               ),
               const SizedBox(height: 24),
 
-              // ── Profile photo card ─────────────────────────────────────
               _ProfilePhotoCard(),
               const SizedBox(height: 28),
 
-              // ── Personal Information ───────────────────────────────────
               _sectionLabel("Personal Information", AppColors.primary),
               const SizedBox(height: 16),
 
@@ -232,7 +222,6 @@ Future<void> fetchSkills() async {
               ),
               const SizedBox(height: 16),
 
-              // Phone with +91 prefix chip
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -241,7 +230,6 @@ Future<void> fetchSkills() async {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      // +91 chip
                       Container(
                         height: 54,
                         padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -302,13 +290,19 @@ Future<void> fetchSkills() async {
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
               ),
+              const SizedBox(height: 16),
+
+              _textField(
+                label: "Biography / Professional Bio",
+                hint: "Tell us about your expertise, experience,\nand what you are looking for...",
+                controller: _bioController,
+                maxLines: 4,
+              ),
               const SizedBox(height: 28),
 
-              // ── Work Details ───────────────────────────────────────────
               _sectionLabel("Work Details", const Color(0xFF10B981)),
               const SizedBox(height: 16),
 
-              // Skill Dropdown
               const Text("Skill Category",
                   style: TextStyle(color: Colors.grey, fontSize: 13)),
               const SizedBox(height: 8),
@@ -360,7 +354,6 @@ Future<void> fetchSkills() async {
               ),
               const SizedBox(height: 16),
 
-              // Experience stepper
               const Text("Years of Experience",
                   style: TextStyle(color: Colors.grey, fontSize: 13)),
               const SizedBox(height: 8),
@@ -373,7 +366,6 @@ Future<void> fetchSkills() async {
                 ),
                 child: Row(
                   children: [
-                    // Minus button
                     _StepperButton(
                       icon: Icons.remove,
                       onTap: () {
@@ -398,7 +390,6 @@ Future<void> fetchSkills() async {
                         ],
                       ),
                     ),
-                    // Plus button
                     _StepperButton(
                       icon: Icons.add,
                       onTap: () => setState(() => _experience++),
@@ -409,26 +400,22 @@ Future<void> fetchSkills() async {
               ),
               const SizedBox(height: 16),
 
-              // ── Preferred Work Location ────────────────────────────────
               const Text("Preferred Work Location",
                   style: TextStyle(color: Colors.grey, fontSize: 13)),
               const SizedBox(height: 8),
               _MapCard(
                 label: _locationLabel,
                 onTap: () {
-                  // TODO: open location picker
                 },
               ),
               const SizedBox(height: 30),
 
-              // ── Submit ─────────────────────────────────────────────────
               PrimaryButton(
                 label: "Continue to Verification",
                 onPressed: _submitForm,
               ),
               const SizedBox(height: 16),
 
-              // Login link
               Center(
                 child: GestureDetector(
                   onTap: () => context.push('/login'),
@@ -457,7 +444,6 @@ Future<void> fetchSkills() async {
   }
 }
 
-// ── Step indicator dots ──────────────────────────────────────────────────────
 class _StepIndicator extends StatelessWidget {
   final int current;
   final int total;
@@ -486,7 +472,6 @@ class _StepIndicator extends StatelessWidget {
   }
 }
 
-// ── Profile photo card ───────────────────────────────────────────────────────
 class _ProfilePhotoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -550,7 +535,6 @@ class _ProfilePhotoCard extends StatelessWidget {
   }
 }
 
-// ── Stepper +/- button ───────────────────────────────────────────────────────
 class _StepperButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
@@ -579,7 +563,6 @@ class _StepperButton extends StatelessWidget {
   }
 }
 
-// ── Fake map card (replace with actual map widget) ───────────────────────────
 class _MapCard extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
@@ -600,12 +583,10 @@ class _MapCard extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
         child: Stack(
           children: [
-            // Map placeholder grid pattern
             CustomPaint(
               size: const Size(double.infinity, 130),
               painter: _MapGridPainter(theme.colorScheme.onSurface.withOpacity(0.03)),
             ),
-            // Pin icons
             Positioned(
               top: 28,
               left: 90,
@@ -616,7 +597,6 @@ class _MapCard extends StatelessWidget {
               left: 40,
               child: Icon(Icons.location_on, color: theme.colorScheme.onSurface.withOpacity(0.05), size: 18),
             ),
-            // Location detect button
             Positioned(
               top: 12,
               right: 12,
@@ -631,7 +611,6 @@ class _MapCard extends StatelessWidget {
                     color: Colors.white, size: 18),
               ),
             ),
-            // Bottom label
             Positioned(
               bottom: 12,
               left: 12,
@@ -665,7 +644,6 @@ class _MapCard extends StatelessWidget {
   }
 }
 
-// Grid painter for map placeholder
 class _MapGridPainter extends CustomPainter {
   final Color gridColor;
   _MapGridPainter(this.gridColor);
