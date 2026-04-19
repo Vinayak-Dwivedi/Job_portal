@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 import '../../core/theme/app_colors.dart';
 
@@ -81,6 +83,21 @@ class _WorkerSignupScreenState extends ConsumerState<WorkerSignupScreen> {
   String _selectedSkill = '';
   int _experience = 0;
   String _locationLabel = 'Andheri East, Mumbai';
+  XFile? _profilePhoto;
+
+  Future<void> _pickImage() async {
+    try {
+      final ImagePicker picker = ImagePicker();
+      final XFile? image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
+      if (image != null) {
+        setState(() {
+          _profilePhoto = image;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error picking image: $e');
+    }
+  }
 
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
@@ -93,6 +110,7 @@ class _WorkerSignupScreenState extends ConsumerState<WorkerSignupScreen> {
         'email': _emailController.text.trim(),
         'bio': _bioController.text.trim(),
         'location': _locationLabel,
+        'profilePhotoPath': _profilePhoto?.path,
       });
     }
   }
@@ -207,7 +225,10 @@ class _WorkerSignupScreenState extends ConsumerState<WorkerSignupScreen> {
               ),
               const SizedBox(height: 24),
 
-              _ProfilePhotoCard(),
+              _ProfilePhotoCard(
+                profilePhoto: _profilePhoto,
+                onPickImage: _pickImage,
+              ),
               const SizedBox(height: 28),
 
               _sectionLabel("Personal Information", AppColors.primary),
@@ -473,63 +494,78 @@ class _StepIndicator extends StatelessWidget {
 }
 
 class _ProfilePhotoCard extends StatelessWidget {
+  final XFile? profilePhoto;
+  final VoidCallback onPickImage;
+
+  const _ProfilePhotoCard({
+    this.profilePhoto,
+    required this.onPickImage,
+  });
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          Stack(
-            children: [
-              Container(
-                width: 72,
-                height: 72,
-                decoration: BoxDecoration(
-                  border: Border.all(
-                      color: Theme.of(context).dividerColor, width: 1.5),
-                  borderRadius: BorderRadius.circular(14),
-                  color: Theme.of(context).scaffoldBackgroundColor,
-                ),
-                child: Icon(Icons.camera_alt_outlined,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant, size: 28),
-              ),
-              Positioned(
-                bottom: 0,
-                right: 0,
-                child: Container(
-                  width: 22,
-                  height: 22,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Theme.of(context).cardColor, width: 2),
-                  ),
-                  child: const Icon(Icons.edit, color: Colors.white, size: 11),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    return GestureDetector(
+      onTap: onPickImage,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardColor,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          children: [
+            Stack(
               children: [
-                Text("Profile Photo",
-                    style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 4),
-                const Text(
-                  "Clear facial photo helps in getting 2× more work requests.",
-                  style: TextStyle(color: Colors.grey, fontSize: 12),
+                Container(
+                  width: 72,
+                  height: 72,
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                        color: Theme.of(context).dividerColor, width: 1.5),
+                    borderRadius: BorderRadius.circular(14),
+                    color: Theme.of(context).scaffoldBackgroundColor,
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: profilePhoto != null
+                      ? Image.file(File(profilePhoto!.path), fit: BoxFit.cover)
+                      : Icon(Icons.camera_alt_outlined,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant, size: 28),
+                ),
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: Container(
+                    width: 22,
+                    height: 22,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primary,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Theme.of(context).cardColor, width: 2),
+                    ),
+                    child: const Icon(Icons.edit, color: Colors.white, size: 11),
+                  ),
                 ),
               ],
             ),
-          ),
-        ],
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("Profile Photo",
+                      style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface,
+                          fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 4),
+                  const Text(
+                    "Clear facial photo helps in getting 2× more work requests.",
+                    style: TextStyle(color: Colors.grey, fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

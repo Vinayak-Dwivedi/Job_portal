@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'document_model.dart';
 
 class EmployerModel {
   final String uid;
@@ -19,6 +20,7 @@ class EmployerModel {
   final double rating;
   final int reviewCount;
   final String hirerSubType;
+  final List<DocumentModel> documents;
 
   EmployerModel({
     required this.uid,
@@ -39,6 +41,7 @@ class EmployerModel {
     this.reviewCount = 0,
     this.bio = '',
     this.hirerSubType = 'company',
+    this.documents = const [],
   });
 
   String get name => companyName.isNotEmpty ? companyName : contactPersonName;
@@ -64,6 +67,7 @@ class EmployerModel {
       'bio': bio,
       'rating': rating,
       'reviewCount': reviewCount,
+      'documents': documents.map((x) => x.toMap()).toList(),
     };
   }
 
@@ -96,6 +100,10 @@ class EmployerModel {
       bio: (map['bio'] ?? '').toString(),
       rating: double.tryParse(map['rating']?.toString() ?? '0.0') ?? 0.0,
       reviewCount: int.tryParse(map['reviewCount']?.toString() ?? '0') ?? 0,
+      documents: (map['documents'] as List?)
+              ?.map((x) => DocumentModel.fromMap(Map<String, dynamic>.from(x)))
+              .toList() ??
+          [],
     );
   }
 }

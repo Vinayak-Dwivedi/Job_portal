@@ -21,6 +21,7 @@ class PostModel {
   final String? location;
   final String? companyName;
   final bool isAvailabilityPost;
+  final List<Map<String, dynamic>> media;
 
   PostModel({
     required this.postId,
@@ -43,6 +44,7 @@ class PostModel {
     this.location,
     this.companyName,
     this.isAvailabilityPost = false,
+    this.media = const [],
   });
 
   factory PostModel.fromMap(Map<String, dynamic> data) => PostModel(
@@ -54,7 +56,7 @@ class PostModel {
     isUserVerified: data['isUserVerified'] ?? data['isVerified'] ?? false,
     title: data['title'] ?? '',
     description: data['description'] ?? data['text'] ?? '',
-    imageUrls: data['imageUrl'] != null ? [data['imageUrl']] : List<String>.from(data['imageUrls'] ?? []),
+    imageUrls: _parseMediaUrls(data), // Still populate it for any legacy usages
     status: data['status'] ?? 'approved', // Defaulting to approved for now if missing
     rejectionReason: data['rejectionReason'],
     createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
@@ -66,6 +68,23 @@ class PostModel {
     location: data['location'],
     companyName: data['companyName'],
     isAvailabilityPost: data['isAvailabilityPost'] ?? false,
+    media: _parseMediaObjects(data),
   );
+
+  static List<String> _parseMediaUrls(Map<String, dynamic> data) {
+    if (data['media'] != null) {
+      return List<String>.from((data['media'] as List).map((m) => m['url'].toString()));
+    }
+    return data['imageUrl'] != null ? [data['imageUrl']] : List<String>.from(data['imageUrls'] ?? []);
+  }
+
+  static List<Map<String, dynamic>> _parseMediaObjects(Map<String, dynamic> data) {
+    if (data['media'] != null) {
+      return List<Map<String, dynamic>>.from(data['media']);
+    }
+    // Fallback for old data
+    final urls = data['imageUrl'] != null ? [data['imageUrl']] : List<String>.from(data['imageUrls'] ?? []);
+    return urls.map((url) => {'url': url, 'type': 'image'}).toList();
+  }
 }
 

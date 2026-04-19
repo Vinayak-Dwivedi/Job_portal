@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../models/subscription_plan_model.dart';
+
 class SubscriptionPlansScreen extends StatelessWidget {
   const SubscriptionPlansScreen({super.key});
 
@@ -15,18 +17,21 @@ class SubscriptionPlansScreen extends StatelessWidget {
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black),
       ),
-      body: StreamBuilder<DocumentSnapshot>(
-        stream: FirebaseFirestore.instance.collection('platform_settings').doc('subscriptions').snapshots(),
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance.collection('subscription_plans').orderBy('price').snapshots(),
         builder: (context, snapshot) {
-          Map<String, dynamic> prices = {
-            'pro': '₹299',
-            'elite': '₹799',
-          };
+          if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          }
 
-          if (snapshot.hasData && snapshot.data!.exists) {
-            final data = snapshot.data!.data() as Map<String, dynamic>;
-            if (data['proPrice'] != null) prices['pro'] = data['proPrice'];
-            if (data['elitePrice'] != null) prices['elite'] = data['elitePrice'];
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          final plans = snapshot.data!.docs.map((doc) => SubscriptionPlan.fromFirestore(doc)).toList();
+
+          if (plans.isEmpty) {
+            return const Center(child: Text('No subscription plans available at the moment.'));
           }
 
           return SingleChildScrollView(
@@ -47,38 +52,15 @@ class SubscriptionPlansScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 32),
 
-                _buildPlanCard(
-                  context,
-                  tier: 'pro',
-                  name: 'Pro Plan',
-                  price: prices['pro']!,
-                  duration: '/mo',
-                  features: [
-                    'Unlimited Job Applications',
-                    'Priority Profile Listing',
-                    'Contact Employers Directly',
-                    'No Ads',
-                  ],
-                  color: const Color(0xFF1D4ED8),
-                  isPopular: true,
-                ),
-                const SizedBox(height: 20),
-                
-                _buildPlanCard(
-                  context,
-                  tier: 'elite',
-                  name: 'Elite Plan',
-                  price: prices['elite']!,
-                  duration: '/quarter',
-                  features: [
-                    'Everything in Pro',
-                    'Dedicated Account Manager',
-                    'Featured Badge on Profile',
-                    'Resume Feedback',
-                  ],
-                  color: const Color(0xFF0F172A),
-                  isPopular: false,
-                ),
+                ...plans.map((plan) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 20),
+                    child: _buildPlanCard(
+                      context,
+                      plan: plan,
+                    ),
+                  );
+                }),
               ],
             ),
           );
@@ -89,14 +71,12 @@ class SubscriptionPlansScreen extends StatelessWidget {
 
   Widget _buildPlanCard(
     BuildContext context, {
-    required String tier,
-    required String name,
-    required String price,
-    required String duration,
-    required List<String> features,
-    required Color color,
-    required bool isPopular,
+    required SubscriptionPlan plan,
   }) {
+    final Color color = Color(int.parse(plan.color.replaceAll('#', '0xFF')));
+    final String priceStr = '₹${plan.price}';
+    final String duration = plan.durationDays >= 90 ? '/quarter' : '/mo';
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -128,12 +108,12 @@ class SubscriptionPlansScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(name, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 18)),
+                Text(plan.name, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 18)),
                 const SizedBox(height: 8),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text(price, style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                    Text(priceStr, style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
                     Padding(
                       padding: const EdgeInsets.only(bottom: 6.0, left: 4),
                       child: Text(duration, style: const TextStyle(color: Color(0xFF64748B))),
@@ -141,7 +121,7 @@ class SubscriptionPlansScreen extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 24),
-                ...features.map((f) => Padding(
+                ...plan.features.map((f) => Padding(
                   padding: const EdgeInsets.only(bottom: 12.0),
                   child: Row(
                     children: [
@@ -156,7 +136,9 @@ class SubscriptionPlansScreen extends StatelessWidget {
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: () {
-                      context.push('/subscription-checkout', extra: {'tier': tier, 'priceStr': price});
+                      context.push('/subscription-checkout', extra: {
+                        'plan': plan,
+                      });
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: color,

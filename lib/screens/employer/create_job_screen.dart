@@ -18,6 +18,8 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
   final durationController = TextEditingController();
   final workersController = TextEditingController();
   final locationController = TextEditingController();
+  final experienceController = TextEditingController();
+  final skillsController = TextEditingController();
 
   String? _selectedCategory;
   bool isLoading = false;
@@ -28,6 +30,19 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
   void initState() {
     super.initState();
     _categoriesFuture = CategoryService().getCategories();
+  }
+
+  @override
+  void dispose() {
+    titleController.dispose();
+    descriptionController.dispose();
+    wageController.dispose();
+    durationController.dispose();
+    workersController.dispose();
+    locationController.dispose();
+    experienceController.dispose();
+    skillsController.dispose();
+    super.dispose();
   }
 
   Future<void> _postJob() async {
@@ -51,6 +66,8 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
         'duration': durationController.text.trim(),
         'workersNeeded': workersController.text.trim(),
         'location': locationController.text.trim(),
+        'experience': experienceController.text.trim(),
+        'skills': skillsController.text.trim(),
         'createdAt': FieldValue.serverTimestamp(),
         'status': 'active',
       });
@@ -227,6 +244,20 @@ class _CreateJobScreenState extends State<CreateJobScreen> {
               TextFormField(
                 controller: locationController,
                 decoration: input("Location"),
+                style: TextStyle(color: theme.colorScheme.onSurface),
+                validator: (v) => v!.isEmpty ? "Required" : null,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: experienceController,
+                decoration: input("Experience Required"),
+                style: TextStyle(color: theme.colorScheme.onSurface),
+                validator: (v) => v!.isEmpty ? "Required" : null,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: skillsController,
+                decoration: input("Required Skills (e.g. Plumbing, Wiring)"),
                 style: TextStyle(color: theme.colorScheme.onSurface),
                 validator: (v) => v!.isEmpty ? "Required" : null,
               ),

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 class EmployerSignupScreen extends StatefulWidget {
   const EmployerSignupScreen({super.key});
@@ -19,6 +21,21 @@ class _EmployerSignupScreenState extends State<EmployerSignupScreen> {
 
   String _selectedHirerType = 'Company / Organization';
   LatLng? _selectedLocation;
+  XFile? _profilePhoto;
+
+  Future<void> _pickImage() async {
+    try {
+      final ImagePicker picker = ImagePicker();
+      final XFile? image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
+      if (image != null) {
+        setState(() {
+          _profilePhoto = image;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error picking image: $e');
+    }
+  }
 
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
@@ -32,6 +49,7 @@ class _EmployerSignupScreenState extends State<EmployerSignupScreen> {
         'experience': '',
         'latitude': _selectedLocation?.latitude.toString() ?? '',
         'longitude': _selectedLocation?.longitude.toString() ?? '',
+        'profilePhotoPath': _profilePhoto?.path,
       });
     }
   }
@@ -140,31 +158,39 @@ class _EmployerSignupScreenState extends State<EmployerSignupScreen> {
                   Stack(
                     alignment: Alignment.bottomRight,
                     children: [
-                      Container(
-                        width: 80,
-                        height: 80,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: theme.cardColor,
-                          border: Border.all(color: theme.colorScheme.onSurface.withOpacity(0.05), style: BorderStyle.none),
-                        ),
-                        // Dashed inner border effect
-                        child: CustomPaint(
-                          painter: _DashedCirclePainter(color: Colors.grey.withOpacity(0.4)),
-                          child: const Center(
-                            child: Icon(Icons.camera_alt_rounded, color: Colors.grey, size: 28),
+                      GestureDetector(
+                        onTap: _pickImage,
+                        child: Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: theme.cardColor,
+                            border: Border.all(color: theme.colorScheme.onSurface.withOpacity(0.05), style: BorderStyle.none),
                           ),
+                          clipBehavior: Clip.antiAlias,
+                          child: _profilePhoto != null
+                              ? Image.file(File(_profilePhoto!.path), fit: BoxFit.cover)
+                              : CustomPaint(
+                                  painter: _DashedCirclePainter(color: Colors.grey.withOpacity(0.4)),
+                                  child: const Center(
+                                    child: Icon(Icons.camera_alt_rounded, color: Colors.grey, size: 28),
+                                  ),
+                                ),
                         ),
                       ),
-                      Container(
-                        width: 24,
-                        height: 24,
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.primary,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: theme.scaffoldBackgroundColor, width: 2),
+                      GestureDetector(
+                        onTap: _pickImage,
+                        child: Container(
+                          width: 24,
+                          height: 24,
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.primary,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: theme.scaffoldBackgroundColor, width: 2),
+                          ),
+                          child: const Icon(Icons.edit, color: Colors.white, size: 12),
                         ),
-                        child: const Icon(Icons.edit, color: Colors.white, size: 12),
                       )
                     ],
                   ),

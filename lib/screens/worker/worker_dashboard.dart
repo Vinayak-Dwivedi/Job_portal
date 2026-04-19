@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../providers/worker_provider.dart';
 import '../../providers/post_provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/banner_provider.dart';
 import '../../widgets/feed/post_card.dart';
 import '../../core/utils/profile_utils.dart';
 import '../../core/theme/app_colors.dart';
@@ -205,57 +207,63 @@ class _WorkerHomeFeedState extends ConsumerState<WorkerHomeFeed> {
                 ),
               ),
 
-              Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF1E1B4B), Color(0xFF0F172A)],
-                      begin: Alignment.centerLeft,
-                      end: Alignment.centerRight,
-                    ),
-                    border: Border.all(color: const Color(0xFF1E293B)),
-                  ),
-                  child: Stack(
-                    children: [
-                      Positioned(
-                        right: -10,
-                        bottom: -20,
-                        child: Text(
-                          'Ad',
-                          style: TextStyle(
-                            fontSize: 100,
-                            fontWeight: FontWeight.w900,
-                            color: Colors.white.withOpacity(0.03),
+              Consumer(
+                builder: (context, ref, child) {
+                  final bannerAsync = ref.watch(activeBannerProvider);
+                  return bannerAsync.when(
+                    data: (banner) {
+                      if (banner == null || !banner.isActive) return const SizedBox.shrink();
+                      return Padding(
+                        padding: const EdgeInsets.all(20.0),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: Stack(
+                            children: [
+                              CachedNetworkImage(
+                                imageUrl: banner.imageUrl,
+                                width: double.infinity,
+                                fit: BoxFit.cover,
+                                placeholder: (context, url) => Container(
+                                  height: 120,
+                                  color: theme.colorScheme.surfaceContainerHighest,
+                                  child: const Center(child: CircularProgressIndicator()),
+                                ),
+                                errorWidget: (context, url, error) => const SizedBox.shrink(),
+                              ),
+                              if (banner.headline != null || banner.subhead != null)
+                                Positioned(
+                                  bottom: 0,
+                                  left: 0,
+                                  right: 0,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        begin: Alignment.bottomCenter,
+                                        end: Alignment.topCenter,
+                                        colors: [Colors.black.withOpacity(0.8), Colors.transparent],
+                                      ),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        if (banner.headline != null && banner.headline!.isNotEmpty)
+                                          Text(banner.headline!, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800)),
+                                        if (banner.subhead != null && banner.subhead!.isNotEmpty)
+                                          Text(banner.subhead!, style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w500)),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                            ],
                           ),
                         ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(20.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFEA580C),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: const Text('FEATURED', style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold, letterSpacing: 1.0)),
-                            ),
-                            const SizedBox(height: 8),
-                            const Text('Unlock Premium\nLead Packs', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800, height: 1.2)),
-                            const SizedBox(height: 6),
-                            const Text('Get 20% off on your first credit purchase.', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11)),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                      );
+                    },
+                    loading: () => const SizedBox.shrink(),
+                    error: (_, __) => const SizedBox.shrink(),
+                  );
+                },
               ),
 
               // Recommended Horizontal row (Optional Filter)

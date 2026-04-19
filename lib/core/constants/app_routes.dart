@@ -45,7 +45,9 @@ import '../../screens/settings/notification_settings_screen.dart';
 import '../../screens/settings/verification_screen.dart';
 import '../../screens/settings/role_preferences_screen.dart';
 import '../../screens/settings/support_screen.dart';
+import '../../screens/settings/blocked_users_screen.dart';
 import '../../screens/common/announcements_screen.dart';
+import '../../screens/worker/earnings_screen.dart';
 
 import '../../widgets/common/ki_bottom_nav_bar.dart';
 
@@ -281,7 +283,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/settings/verification', pageBuilder: (context, state) => slideRightPage(state, const VerificationScreen())),
       GoRoute(path: '/settings/preferences', pageBuilder: (context, state) => slideRightPage(state, const RolePreferencesScreen())),
       GoRoute(path: '/settings/support', pageBuilder: (context, state) => slideRightPage(state, const SupportScreen())),
+      GoRoute(path: '/settings/blocked', pageBuilder: (context, state) => slideRightPage(state, const BlockedUsersScreen())),
       GoRoute(path: '/announcements', pageBuilder: (context, state) => slideRightPage(state, const AnnouncementsScreen())),
+      GoRoute(path: '/worker/earnings', pageBuilder: (context, state) => slideRightPage(state, const EarningsScreen())),
     ],
   );
 });

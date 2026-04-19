@@ -20,19 +20,9 @@ class SubscriptionService {
     return SubscriptionModel.fromMap(doc.data()!);
   }
 
-  static Future<void> updateSubscription(String uid, String tier, int durationDays, int maxApp) async {
+  static Future<void> updateSubscription(String uid, String tier, int durationDays, int maxApp, int creditsToGrant) async {
     final expiry = DateTime.now().add(Duration(days: durationDays));
     
-    // Calculate credits to add based on tier
-    int bonusCredits = 0;
-    if (tier.toLowerCase() == 'pro' || tier.toLowerCase() == 'professional') {
-      bonusCredits = 150;
-    } else if (tier.toLowerCase() == 'elite' || tier.toLowerCase() == 'ultimate') {
-      bonusCredits = 500;
-    } else if (tier.toLowerCase() == 'basic') {
-      bonusCredits = 50;
-    }
-
     await _firestore.collection('subscriptions').doc(uid).set({
       'userId': uid,
       'currentTier': tier,
@@ -46,7 +36,7 @@ class SubscriptionService {
     await _firestore.collection('users').doc(uid).update({
       'subscriptionTier': tier,
       'subscriptionValidUntil': Timestamp.fromDate(expiry),
-      'credits': FieldValue.increment(bonusCredits),
+      'credits': FieldValue.increment(creditsToGrant),
     });
   }
 

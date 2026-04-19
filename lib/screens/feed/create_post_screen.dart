@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -22,64 +23,193 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
   final TextEditingController _jobTitleController = TextEditingController();
   final TextEditingController _jobSalaryController = TextEditingController();
   final TextEditingController _jobLocationController = TextEditingController();
+  final TextEditingController _jobExperienceController = TextEditingController();
+  final TextEditingController _jobSkillsController = TextEditingController();
   final ImagePicker _picker = ImagePicker();
-  final List<File> _selectedImages = [];
+  final List<Map<String, dynamic>> _selectedMedia = []; // {'file': File, 'type': 'image' or 'video'}
+
   bool _isLoading = false;
   bool _isJobPost = false;
   bool _isAvailabilityPost = false;
 
+  // Event state
+  DateTime? _eventDate;
+  TimeOfDay? _eventTime;
+  String? _eventLocation;
+  String? _eventTitle;
+
+  // Visibility state
+  String _visibility = 'public';
+
   Future<void> _pickImages() async {
-    if (_selectedImages.length >= 1) {
+    if (_selectedMedia.length >= 4) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Unified schema supports 1 image per post')),
+        const SnackBar(content: Text('Maximum 4 media files allowed per post')),
       );
       return;
     }
 
     try {
-      final XFile? image = await _picker.pickImage(
-        source: ImageSource.gallery,
+      final List<XFile> media = await _picker.pickMultipleMedia(
         imageQuality: 80,
       );
       
-      if (image != null) {
+      if (media.isNotEmpty) {
         setState(() {
-          _selectedImages.add(File(image.path));
+          for (var item in media) {
+            if (_selectedMedia.length < 4) {
+              final extension = item.path.split('.').last.toLowerCase();
+              final isVideo = ['mp4', 'mov', 'avi', 'mkv', 'webm'].contains(extension);
+              _selectedMedia.add({'file': File(item.path), 'type': isVideo ? 'video' : 'image'});
+            }
+          }
         });
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to pick images: $e')),
+        SnackBar(content: Text('Failed to pick media: $e')),
       );
     }
   }
 
   Future<void> _pickCamera() async {
-    if (_selectedImages.length >= 1) {
+    if (_selectedMedia.length >= 4) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Unified schema supports 1 image per post')),
+        const SnackBar(content: Text('Maximum 4 media files allowed per post')),
       );
       return;
     }
 
     try {
-      final XFile? image = await _picker.pickImage(source: ImageSource.camera, imageQuality: 80);
-      if (image != null) {
+      // Pick video from camera
+      final XFile? video = await _picker.pickVideo(source: ImageSource.camera);
+      if (video != null) {
         setState(() {
-          _selectedImages.add(File(image.path));
+          _selectedMedia.add({'file': File(video.path), 'type': 'video'});
         });
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to pick image: $e')),
+        SnackBar(content: Text('Failed to pick video: $e')),
       );
     }
+  }
+
+  @override
+  void dispose() {
+    _descController.dispose();
+    _jobTitleController.dispose();
+    _jobSalaryController.dispose();
+    _jobLocationController.dispose();
+    _jobExperienceController.dispose();
+    _jobSkillsController.dispose();
+    super.dispose();
+  }
+
+  void _showVisibilitySheet() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Text('Who can see this post?', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              ),
+              _visibilityOption('Public', 'public', Icons.public),
+              _visibilityOption('Following', 'following', Icons.people),
+              if (ref.read(authProvider)?.role != 'employer') 
+                _visibilityOption('Employers Only', 'employers', Icons.work),
+              if (ref.read(authProvider)?.role != 'worker')
+                _visibilityOption('Workers Only', 'workers', Icons.engineering),
+            ],
+          ),
+        );
+      }
+    );
+  }
+
+  Widget _visibilityOption(String title, String value, IconData icon) {
+    return ListTile(
+      leading: Icon(icon),
+      title: Text(title),
+      trailing: _visibility == value ? const Icon(Icons.check, color: Colors.blue) : null,
+      onTap: () {
+        setState(() => _visibility = value);
+        Navigator.pop(context);
+      },
+    );
+  }
+
+  void _showEventDialog() {
+    final titleCtrl = TextEditingController(text: _eventTitle);
+    final locCtrl = TextEditingController(text: _eventLocation);
+    DateTime? tempDate = _eventDate;
+    TimeOfDay? tempTime = _eventTime;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(builder: (context, setDialogState) {
+          final theme = Theme.of(context);
+          return AlertDialog(
+            title: Text('Add Event Details', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: theme.colorScheme.onSurface)),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                   TextField(controller: titleCtrl, decoration: const InputDecoration(labelText: 'Event Title')),
+                   TextField(controller: locCtrl, decoration: const InputDecoration(labelText: 'Location')),
+                   const SizedBox(height: 16),
+                   ListTile(
+                     contentPadding: EdgeInsets.zero,
+                     title: Text(tempDate == null ? 'Select Date' : '${tempDate!.day}/${tempDate!.month}/${tempDate!.year}'),
+                     trailing: const Icon(Icons.calendar_today),
+                     onTap: () async {
+                       final dt = await showDatePicker(context: context, initialDate: tempDate ?? DateTime.now(), firstDate: DateTime.now(), lastDate: DateTime(2030));
+                       if (dt != null) setDialogState(() => tempDate = dt);
+                     },
+                   ),
+                   ListTile(
+                     contentPadding: EdgeInsets.zero,
+                     title: Text(tempTime == null ? 'Select Time' : tempTime!.format(context)),
+                     trailing: const Icon(Icons.access_time),
+                     onTap: () async {
+                       final tm = await showTimePicker(context: context, initialTime: tempTime ?? TimeOfDay.now());
+                       if (tm != null) setDialogState(() => tempTime = tm);
+                     },
+                   ),
+                 ],
+              ),
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+              ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    _eventTitle = titleCtrl.text.trim();
+                    _eventLocation = locCtrl.text.trim();
+                    _eventDate = tempDate;
+                    _eventTime = tempTime;
+                  });
+                  Navigator.pop(context);
+                },
+                child: const Text('Save Event')
+              )
+            ],
+          );
+        });
+      }
+    );
   }
 
   Future<void> _submitPost() async {
     final desc = _descController.text.trim();
 
-    if (desc.isEmpty && _selectedImages.isEmpty) {
+    if (desc.isEmpty && _selectedMedia.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please add some text or an image to post!')),
       );
@@ -105,6 +235,12 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
         name = worker?.name ?? 'Worker';
         photoUrl = worker?.profilePhotoUrl;
         isVerified = worker?.isVerified ?? false;
+      } else if (auth.role == 'admin') {
+        final adminDoc = await FirebaseFirestore.instance.collection('users').doc(auth.uid).get();
+        final adminData = adminDoc.data();
+        name = adminData?['name'] ?? adminData?['fullName'] ?? 'Admin';
+        photoUrl = adminData?['profilePhotoUrl'];
+        isVerified = true;
       } else {
         final employer = ref.read(employerProvider);
         name = employer?.name ?? 'Employer';
@@ -118,7 +254,8 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
         name: name,
         role: auth.role,
         text: desc,
-        imageFiles: _selectedImages,
+        mediaFiles: _selectedMedia,
+        isAdmin: auth.role == 'admin',
         profilePhotoUrl: photoUrl,
         isVerified: isVerified,
         location: (_isJobPost || _isAvailabilityPost) ? _jobLocationController.text.trim() : 'Current Location',
@@ -126,7 +263,14 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
         isAvailabilityPost: _isAvailabilityPost,
         jobTitle: (_isJobPost || _isAvailabilityPost) ? _jobTitleController.text.trim() : null,
         jobSalary: (_isJobPost || _isAvailabilityPost) ? _jobSalaryController.text.trim() : null,
+        jobExperience: (_isJobPost || _isAvailabilityPost) ? _jobExperienceController.text.trim() : null,
+        jobSkills: (_isJobPost || _isAvailabilityPost) ? _jobSkillsController.text.trim() : null,
         companyName: _isJobPost ? (employerCompany?.isNotEmpty == true ? employerCompany : name) : null,
+        eventDate: _eventDate,
+        eventTime: _eventTime?.format(context),
+        eventLocation: _eventLocation?.isNotEmpty == true ? _eventLocation : null,
+        eventTitle: _eventTitle?.isNotEmpty == true ? _eventTitle : null,
+        visibility: _visibility,
       );
 
       if (mounted) {
@@ -141,14 +285,6 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
     }
   }
 
-  @override
-  void dispose() {
-    _descController.dispose();
-    _jobTitleController.dispose();
-    _jobSalaryController.dispose();
-    _jobLocationController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -224,20 +360,23 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                             name,
                             style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 15),
                           ),
-                          Container(
-                            margin: const EdgeInsets.only(top: 2),
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: theme.colorScheme.surfaceVariant,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(Icons.public, size: 12, color: theme.colorScheme.onSurfaceVariant),
-                                const SizedBox(width: 4),
-                                Text('Public', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 10, fontWeight: FontWeight.bold)),
-                                Icon(Icons.arrow_drop_down, size: 14, color: theme.colorScheme.onSurfaceVariant),
-                              ],
+                          GestureDetector(
+                            onTap: _showVisibilitySheet,
+                            child: Container(
+                              margin: const EdgeInsets.only(top: 2),
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.surfaceVariant,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.public, size: 12, color: theme.colorScheme.onSurfaceVariant),
+                                  const SizedBox(width: 4),
+                                  Text(_visibility.toUpperCase(), style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 10, fontWeight: FontWeight.bold)),
+                                  Icon(Icons.arrow_drop_down, size: 14, color: theme.colorScheme.onSurfaceVariant),
+                                ],
+                              ),
                             ),
                           ),
                         ],
@@ -323,34 +462,83 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                         ),
                         const SizedBox(height: 12),
                         _buildJobField('Location (e.g. Mumbai, MH)', _jobLocationController, theme),
+                        const SizedBox(height: 12),
+                        _buildJobField(
+                          isWorker ? 'My Experience (e.g. 5 Years)' : 'Experience Required (e.g. 5 Years)', 
+                          _jobExperienceController, 
+                          theme
+                        ),
+                        const SizedBox(height: 12),
+                        _buildJobField(
+                          isWorker ? 'My Top Skills (e.g. Plumbing, Wiring)' : 'Skills Required (e.g. Plumbing, Wiring)', 
+                          _jobSkillsController, 
+                          theme
+                        ),
                         const SizedBox(height: 16),
                       ],
                     ),
                   const SizedBox(height: 16),
-                  if (_selectedImages.isNotEmpty)
-                    Stack(
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(16),
-                          child: Container(
-                            width: double.infinity,
-                            constraints: const BoxConstraints(maxHeight: 300),
-                            child: Image.file(_selectedImages.first, fit: BoxFit.cover),
-                          ),
-                        ),
-                        Positioned(
-                          top: 10,
-                          right: 10,
-                          child: GestureDetector(
-                            onTap: () => setState(() => _selectedImages.clear()),
-                            child: Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
-                              child: const Icon(Icons.close, color: Colors.white, size: 20),
+                  if (_selectedMedia.isNotEmpty)
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: _selectedMedia.asMap().entries.map((entry) {
+                        final index = entry.key;
+                        final mediaItem = entry.value;
+                        final File file = mediaItem['file'];
+                        final bool isVideo = mediaItem['type'] == 'video';
+
+                        return Stack(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: Container(
+                                width: 100,
+                                height: 100,
+                                color: theme.colorScheme.surfaceVariant,
+                                child: isVideo
+                                    ? Icon(Icons.videocam, size: 40, color: theme.colorScheme.onSurfaceVariant)
+                                    : Image.file(file, fit: BoxFit.cover),
+                              ),
                             ),
-                          ),
-                        ),
-                      ],
+                            Positioned(
+                              top: 4,
+                              right: 4,
+                              child: GestureDetector(
+                                onTap: () => setState(() => _selectedMedia.removeAt(index)),
+                                child: Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
+                                  child: const Icon(Icons.close, color: Colors.white, size: 14),
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      }).toList(),
+                    ),
+                  if (_eventTitle != null && _eventTitle!.isNotEmpty)
+                    Container(
+                      margin: const EdgeInsets.only(top: 16),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(color: theme.colorScheme.surfaceVariant.withOpacity(0.5), borderRadius: BorderRadius.circular(8)),
+                      child: Row(
+                         children: [
+                           const Icon(Icons.event, color: AppColors.primary),
+                           const SizedBox(width: 12),
+                           Expanded(
+                             child: Column(
+                               crossAxisAlignment: CrossAxisAlignment.start,
+                               children: [
+                                  Text(_eventTitle!, style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
+                                  if (_eventDate != null) Text('${_eventDate!.day}/${_eventDate!.month}/${_eventDate!.year} ${(_eventTime != null) ? _eventTime!.format(context) : ""}', style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant)),
+                                  if (_eventLocation != null && _eventLocation!.isNotEmpty) Text(_eventLocation!, style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant)),
+                               ],
+                             )
+                           ),
+                           IconButton(icon: Icon(Icons.close, color: theme.colorScheme.onSurfaceVariant, size: 20), onPressed: () => setState(() { _eventTitle = null; _eventDate = null; _eventLocation = null; _eventTime = null; }))
+                         ]
+                      )
                     ),
                 ],
               ),
@@ -373,12 +561,9 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
               children: [
                 _buildToolbarItem(Icons.image_outlined, 'Photo', theme, _pickImages),
                 _buildToolbarItem(Icons.camera_alt_outlined, 'Video', theme, _pickCamera),
-                _buildToolbarItem(Icons.event_outlined, 'Event', theme, () {}),
-                _buildToolbarItem(Icons.more_horiz, '', theme, () {}),
+                _buildToolbarItem(Icons.event_outlined, 'Event', theme, _showEventDialog),
                 const Spacer(),
-                Icon(Icons.mode_comment_outlined, color: theme.colorScheme.onSurfaceVariant),
-                const SizedBox(width: 4),
-                Text('Anyone', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12, fontWeight: FontWeight.bold)),
+                _buildToolbarItem(Icons.more_horiz, 'Visibility', theme, _showVisibilitySheet),
               ],
             ),
           ),

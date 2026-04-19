@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../providers/worker_provider.dart';
 import '../../providers/theme_provider.dart';
@@ -238,41 +239,63 @@ class WorkerProfileScreen extends ConsumerWidget {
             data: (data) {
               if (data == null) return const SizedBox.shrink();
               final balance = int.tryParse(data['balance']?.toString() ?? '0') ?? 0;
-              return Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                margin: const EdgeInsets.only(bottom: 24),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [theme.colorScheme.primary, theme.colorScheme.primary.withAlpha(200)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+              return GestureDetector(
+                onTap: () => context.push('/worker/earnings'),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  margin: const EdgeInsets.only(bottom: 24),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [theme.colorScheme.primary, theme.colorScheme.primary.withAlpha(200)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: theme.colorScheme.primary.withOpacity(0.35),
+                        blurRadius: 18,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
                   ),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.wallet, color: Colors.white, size: 32),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('Account Credits', style: TextStyle(color: Colors.white70, fontSize: 12)),
-                          Text('$balance Credits', style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-                        ],
+                  child: Row(
+                    children: [
+                      const Icon(Icons.wallet, color: Colors.white, size: 32),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Account Credits',
+                                style: TextStyle(color: Colors.white70, fontSize: 12)),
+                            Text('$balance Credits',
+                                style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold)),
+                            const SizedBox(height: 4),
+                            const Text('Tap to view history →',
+                                style: TextStyle(
+                                    color: Colors.white54,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600)),
+                          ],
+                        ),
                       ),
-                    ),
-                    ElevatedButton(
-                      onPressed: () => context.push('/subscription'), 
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: theme.colorScheme.primary,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ElevatedButton(
+                        onPressed: () => context.push('/subscription'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: theme.colorScheme.primary,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10)),
+                        ),
+                        child: const Text('TOP UP'),
                       ),
-                      child: const Text('TOP UP'),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               );
             },
@@ -305,13 +328,116 @@ class WorkerProfileScreen extends ConsumerWidget {
 
           _sectionHeader('Contact Information', theme),
           const SizedBox(height: 12),
-          _contactTile(Icons.email_outlined, 'Email', worker.email ?? 'N/A', theme),
-          _contactTile(Icons.phone_outlined, 'Phone', worker.phone, theme),
           _contactTile(Icons.location_on_outlined, 'Location', worker.location.isNotEmpty ? worker.location : 'Not set', theme),
+          const SizedBox(height: 32),
+
+          _sectionHeader('Documents & Certifications', theme),
+          const SizedBox(height: 16),
+          if (worker.documents.isEmpty)
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: theme.cardColor,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: theme.dividerColor.withOpacity(0.05)),
+              ),
+              child: Center(
+                child: Column(
+                  children: [
+                    Icon(Icons.description_outlined, size: 40, color: theme.colorScheme.onSurfaceVariant.withOpacity(0.3)),
+                    const SizedBox(height: 12),
+                    Text(
+                      'No documents uploaded yet',
+                      style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 13),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: worker.documents.length,
+              itemBuilder: (context, index) {
+                final doc = worker.documents[index];
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: theme.cardColor,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: theme.dividerColor.withOpacity(0.05)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.02),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.primary.withOpacity(0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          doc.type.toLowerCase() == 'pdf' ? Icons.picture_as_pdf : Icons.insert_drive_file,
+                          color: theme.colorScheme.primary,
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              doc.name,
+                              style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 14),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Uploaded on ${_formatDate(doc.timestamp)}',
+                              style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 11),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.remove_red_eye_outlined),
+                        color: theme.colorScheme.primary,
+                        onPressed: () async {
+                          final uri = Uri.parse(doc.url);
+                          if (await canLaunchUrl(uri)) {
+                            await launchUrl(uri, mode: LaunchMode.externalApplication);
+                          } else {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Could not launch document')),
+                              );
+                            }
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
           const SizedBox(height: 40),
         ],
       ),
     );
+  }
+
+  String _formatDate(DateTime date) {
+    return "${date.day}/${date.month}/${date.year}";
   }
 
   Widget _buildPostsTab(AsyncValue<List<Map<String, dynamic>>> postsAsync, ThemeData theme, bool availabilityOnly) {

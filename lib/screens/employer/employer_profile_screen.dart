@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/employer_provider.dart';
 import '../../providers/theme_provider.dart';
@@ -340,6 +341,89 @@ class EmployerProfileScreen extends ConsumerWidget {
                       style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 14, height: 1.6),
                     ),
                   ),
+                  const SizedBox(height: 32),
+
+                  // ── Documents Section ──────────────────────────────────
+                  _SectionHeader(title: 'Documents & Certifications', theme: theme),
+                  const SizedBox(height: 12),
+                  if (employer.documents.isEmpty)
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: theme.cardColor,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: theme.dividerColor.withOpacity(0.05)),
+                      ),
+                      child: Center(
+                        child: Text(
+                          'No documents uploaded yet',
+                          style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 13),
+                        ),
+                      ),
+                    )
+                  else
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: employer.documents.length,
+                      itemBuilder: (context, index) {
+                        final doc = employer.documents[index];
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: theme.cardColor,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: theme.dividerColor.withOpacity(0.05)),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: theme.colorScheme.primary.withOpacity(0.1),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  doc.type.toLowerCase() == 'pdf' ? Icons.picture_as_pdf : Icons.insert_drive_file,
+                                  color: theme.colorScheme.primary,
+                                  size: 20,
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      doc.name,
+                                      style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 14),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Uploaded: ${doc.timestamp.day}/${doc.timestamp.month}/${doc.timestamp.year}',
+                                      style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 11),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.remove_red_eye_outlined),
+                                color: theme.colorScheme.primary,
+                                onPressed: () async {
+                                  final uri = Uri.parse(doc.url);
+                                  if (await canLaunchUrl(uri)) {
+                                    await launchUrl(uri, mode: LaunchMode.externalApplication);
+                                  }
+                                },
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
                   const SizedBox(height: 32),
 
                   // ── My Posts & Activity ──────────────────────────────

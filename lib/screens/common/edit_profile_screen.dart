@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:go_router/go_router.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'dart:io';
 import '../../providers/auth_provider.dart';
 import '../../providers/worker_provider.dart';
 import '../../providers/employer_provider.dart';
+import '../../core/services/document_service.dart';
+import '../../models/document_model.dart';
 
 class EditProfileScreen extends ConsumerStatefulWidget {
   const EditProfileScreen({super.key});
@@ -29,6 +36,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   List<String> _selectedSkills = [];
   List<Map<String, dynamic>> _documents = [];
   List<String> _availableCategories = [];
+  String _profilePhotoUrl = '';
 
   @override
   void initState() {
@@ -71,6 +79,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         if (docsList is List) {
           _documents = List<Map<String, dynamic>>.from(docsList);
         }
+        _profilePhotoUrl = data['profilePhotoUrl'] ?? '';
       }
     } catch (e) {
       debugPrint("Error fetching data: $e");
@@ -136,46 +145,78 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     }
   }
 
-  void _showAddDocumentDialog() {
-    final docNameController = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          backgroundColor: Theme.of(context).cardColor,
-          title: Text('Add Document', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
-          content: TextField(
-            style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-            decoration: InputDecoration(
-              hintText: 'Document Name',
-              hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
-              filled: true,
-              fillColor: Theme.of(context).scaffoldBackgroundColor,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                final name = docNameController.text.trim();
-                if (name.isNotEmpty) {
-                  setState(() {
-                    _documents.add({'name': name, 'url': ''});
-                  });
-                  Navigator.pop(context);
-                }
-              },
-              style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.primary),
-              child: const Text('Add', style: TextStyle(color: Colors.white)),
-            ),
-          ],
+  Future<void> _updateProfilePhoto() async {
+    try {
+      final ImagePicker picker = ImagePicker();
+      final XFile? image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
+      if (image != null) {
+        setState(() => _isLoading = true);
+        final auth = ref.read(authProvider);
+        if (auth == null) return;
+        final file = File(image.path);
+        final extension = image.path.split('.').last.toLowerCase();
+        final fileName = 'profile_${DateTime.now().millisecondsSinceEpoch}.$extension';
+        final storageRef = FirebaseStorage.instance.ref().child('users').child(auth.uid).child(fileName);
+        await storageRef.putFile(file);
+        final url = await storageRef.getDownloadURL();
+        await FirebaseFirestore.instance.collection('users').doc(auth.uid).update({'profilePhotoUrl': url});
+        
+        setState(() {
+          _profilePhotoUrl = url;
+          _isLoading = false;
+        });
+        
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Profile photo updated'), backgroundColor: Colors.green));
+        
+        if (_role == 'worker') {
+          ref.read(workerProvider.notifier).loadProfile(auth.uid);
+        } else {
+          ref.read(employerProvider.notifier).loadProfile(auth.uid);
+        }
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoading = false);
+      debugPrint("Photo upload error: $e");
+    }
+  }
+
+  Future<void> _pickDocument() async {
+    if (_documents.length >= 4) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Maximum 4 documents allowed. Delete an existing one to add another.'), backgroundColor: Colors.orange));
+      return;
+    }
+    
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+      );
+ 
+      if (result != null && result.files.single.path != null) {
+        setState(() => _isLoading = true);
+        final auth = ref.read(authProvider);
+        if (auth == null) return;
+        
+        // Use our new DocumentService
+        final doc = await DocumentService.uploadDocument(
+          uid: auth.uid,
+          name: result.files.single.name,
+          phone: auth.phone,
+          file: File(result.files.single.path!),
         );
-      },
-    );
+        
+        setState(() {
+          _documents.add(doc.toMap());
+          _isLoading = false;
+        });
+        
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Document uploaded successfully!'), backgroundColor: Colors.green));
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoading = false);
+      debugPrint("Document upload error: $e");
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error uploading document'), backgroundColor: Colors.red));
+    }
   }
 
   @override
@@ -231,16 +272,16 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       child: CircleAvatar(
                         radius: 50,
                         backgroundColor: theme.colorScheme.surfaceVariant,
-                        backgroundImage: null, // Placeholder since we aren't handling files yet
-                        child: Icon(Icons.person_rounded, size: 50, color: theme.colorScheme.onSurfaceVariant),
+                        backgroundImage: _profilePhotoUrl.isNotEmpty 
+                            ? CachedNetworkImageProvider(_profilePhotoUrl)
+                            : null,
+                        child: _profilePhotoUrl.isEmpty 
+                            ? Icon(Icons.person_rounded, size: 50, color: theme.colorScheme.onSurfaceVariant)
+                            : null,
                       ),
                     ),
                     InkWell(
-                      onTap: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Firebase Storage not enabled. Placeholder implementation only.')),
-                        );
-                      },
+                      onTap: _updateProfilePhoto,
                       child: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
@@ -317,9 +358,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 children: [
                   _buildSectionTitle('Documents', theme),
                   TextButton.icon(
-                    onPressed: _showAddDocumentDialog,
-                    icon: Icon(Icons.add_circle_outline, color: theme.colorScheme.primary, size: 18),
-                    label: Text('Add New', style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.bold)),
+                    onPressed: _documents.length >= 4 ? null : _pickDocument,
+                    icon: Icon(Icons.add_circle_outline, color: _documents.length >= 4 ? Colors.grey : theme.colorScheme.primary, size: 18),
+                    label: Text('Add New (Max 4)', style: TextStyle(color: _documents.length >= 4 ? Colors.grey : theme.colorScheme.primary, fontWeight: FontWeight.bold)),
                   ),
                 ],
               ),
@@ -362,10 +403,21 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                             icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 22),
                             padding: EdgeInsets.zero,
                             constraints: const BoxConstraints(),
-                            onPressed: () {
-                              setState(() {
-                                _documents.removeAt(index);
-                              });
+                            onPressed: () async {
+                              final auth = ref.read(authProvider);
+                              if (auth == null) return;
+                              
+                              setState(() => _isLoading = true);
+                              try {
+                                await DocumentService.deleteDocument(auth.uid, DocumentModel.fromMap(doc));
+                                setState(() {
+                                  _documents.removeAt(index);
+                                });
+                              } catch (e) {
+                                debugPrint("Error deleting document: $e");
+                              } finally {
+                                setState(() => _isLoading = false);
+                              }
                             },
                           )
                         ],

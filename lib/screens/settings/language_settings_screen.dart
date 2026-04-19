@@ -14,14 +14,6 @@ class _LanguageSettingsScreenState extends State<LanguageSettingsScreen> {
   final List<Map<String, String>> _languages = [
     {'name': 'English', 'native': 'English'},
     {'name': 'Hindi', 'native': 'हिन्दी'},
-    {'name': 'Bengali', 'native': 'বাংলা'},
-    {'name': 'Telugu', 'native': 'తెలుగు'},
-    {'name': 'Marathi', 'native': 'मराठी'},
-    {'name': 'Tamil', 'native': 'தமிழ்'},
-    {'name': 'Gujarati', 'native': 'ગુજરાતી'},
-    {'name': 'Kannada', 'native': 'ಕನ್ನಡ'},
-    {'name': 'Malayalam', 'native': 'മലയാളം'},
-    {'name': 'Punjabi', 'native': 'ਪੰਜਾਬੀ'},
   ];
 
   @override

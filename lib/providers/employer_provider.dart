@@ -33,7 +33,7 @@ class EmployerNotifier extends Notifier<EmployerModel?> {
 
   Future<void> loadProfile(String uid) async {
     try {
-      final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get(const GetOptions(source: Source.server));
       if (doc.exists && doc.data() != null) {
         final data = doc.data()!;
         print("🔥 DATA FROM FIRESTORE: $data");

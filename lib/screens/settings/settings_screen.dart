@@ -69,6 +69,13 @@ class SettingsScreen extends ConsumerWidget {
                   theme: theme,
                 ),
                 _SettingsTile(
+                  icon: Icons.block_rounded,
+                  title: 'Blocked Users',
+                  subtitle: 'Manage blocked accounts',
+                  onTap: () => context.push('/settings/blocked'),
+                  theme: theme,
+                ),
+                _SettingsTile(
                   icon: Icons.notifications_none_rounded,
                   title: 'Notifications',
                   subtitle: 'Manage alerts and messages',
@@ -93,7 +100,22 @@ class SettingsScreen extends ConsumerWidget {
                   icon: Icons.info_outline_rounded,
                   title: 'About',
                   subtitle: 'Terms, Privacy, Version 1.0.0',
-                  onTap: () {},
+                  onTap: () {
+                    showDialog(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        backgroundColor: theme.cardColor,
+                        title: const Text('About KI Job Portal', style: TextStyle(fontWeight: FontWeight.bold)),
+                        content: const Text('Version: 1.0.0\n\nThe most comprehensive job portal for blue and white collar workers.\n\n© 2026 KI Job Portal. All rights reserved.'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx),
+                            child: const Text('Close'),
+                          )
+                        ],
+                      ),
+                    );
+                  },
                   theme: theme,
                 ),
               ],

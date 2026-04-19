@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'document_model.dart';
 
 class WorkerModel {
   final String uid;
@@ -17,6 +18,7 @@ class WorkerModel {
   final int credits;
   final double rating;
   final int reviewCount;
+  final List<DocumentModel> documents;
 
   WorkerModel({
     required this.uid,
@@ -35,6 +37,7 @@ class WorkerModel {
     this.credits = 0,
     this.rating = 0.0,
     this.reviewCount = 0,
+    this.documents = const [],
   });
 
   WorkerModel copyWith({
@@ -54,6 +57,7 @@ class WorkerModel {
     int? experience,
     double? rating,
     int? reviewCount,
+    List<DocumentModel>? documents,
   }) {
     return WorkerModel(
       uid: uid ?? this.uid,
@@ -72,6 +76,7 @@ class WorkerModel {
       credits: credits ?? this.credits,
       rating: rating ?? this.rating,
       reviewCount: reviewCount ?? this.reviewCount,
+      documents: documents ?? this.documents,
     );
   }
 
@@ -91,6 +96,7 @@ class WorkerModel {
       'credits': credits,
       'rating': rating,
       'reviewCount': reviewCount,
+      'documents': documents.map((x) => x.toMap()).toList(),
     };
   }
 
@@ -128,6 +134,10 @@ class WorkerModel {
       credits: int.tryParse(map['credits']?.toString() ?? '50') ?? 50,
       rating: double.tryParse(map['rating']?.toString() ?? '0.0') ?? 0.0,
       reviewCount: int.tryParse(map['reviewCount']?.toString() ?? '0') ?? 0,
+      documents: (map['documents'] as List?)
+              ?.map((x) => DocumentModel.fromMap(Map<String, dynamic>.from(x)))
+              .toList() ??
+          [],
     );
   }
 }

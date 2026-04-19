@@ -1,16 +1,46 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../core/services/post_service.dart';
 import 'auth_provider.dart';
 import 'application_provider.dart';
 
+final currentUserDocProvider = StreamProvider.autoDispose((ref) {
+  final auth = ref.watch(authProvider);
+  if (auth == null) return Stream.value(null);
+  return FirebaseFirestore.instance.collection('users').doc(auth.uid).snapshots();
+});
+
+bool _canViewPost(DocumentSnapshot doc, List<String> blockedUids, List<String> hiddenPostIds, String? currentUid, String? currentRole) {
+  final data = doc.data() as Map<String, dynamic>?;
+  if (data == null) return false;
+
+  final uid = data['uid'] as String?;
+  final visibility = data['visibility'] as String? ?? 'public';
+  
+  if (blockedUids.contains(uid) || hiddenPostIds.contains(doc.id)) return false;
+  
+  if (uid != currentUid) {
+     if (visibility == 'employers' && currentRole != 'employer') return false;
+     if (visibility == 'workers' && currentRole != 'worker') return false;
+  }
+  return true;
+}
+
 final feedProvider = StreamProvider((ref) {
+  final userDocAsync = ref.watch(currentUserDocProvider);
+  final blockedUids = List<String>.from((userDocAsync.value?.data() as Map<String, dynamic>?)?['blockedUsers'] ?? []);
+  final hiddenPostIds = List<String>.from((userDocAsync.value?.data() as Map<String, dynamic>?)?['hiddenPosts'] ?? []);
+  final currentUid = ref.watch(authProvider)?.uid;
+  final currentRole = ref.watch(authProvider)?.role;
+
   return FirebaseFirestore.instance
       .collection('posts')
       .orderBy('createdAt', descending: true)
       .snapshots()
-      .map((snapshot) => snapshot.docs.map((doc) {
+      .map((snapshot) => snapshot.docs
+          .where((doc) => _canViewPost(doc, blockedUids, hiddenPostIds, currentUid, currentRole))
+          .map((doc) {
             final data = doc.data();
-
             return {
               'id': doc.id,
               'uid': data['uid'] ?? '',
@@ -24,6 +54,11 @@ final feedProvider = StreamProvider((ref) {
               'isAdmin': data['isAdmin'] ?? false,
               'likes': data['likes'] ?? 0,
               'comments': data['comments'] ?? 0,
+              'eventDate': data['eventDate'],
+              'eventTime': data['eventTime'],
+              'eventLocation': data['eventLocation'],
+              'eventTitle': data['eventTitle'],
+              'visibility': data['visibility'] ?? 'public',
               'createdAt': data['createdAt'],
             };
           }).toList());
@@ -57,12 +92,20 @@ final pendingPostsProvider = StreamProvider((ref) {
 });
 
 final jobFeedProvider = StreamProvider((ref) {
+  final userDocAsync = ref.watch(currentUserDocProvider);
+  final blockedUids = List<String>.from((userDocAsync.value?.data() as Map<String, dynamic>?)?['blockedUsers'] ?? []);
+  final hiddenPostIds = List<String>.from((userDocAsync.value?.data() as Map<String, dynamic>?)?['hiddenPosts'] ?? []);
+  final currentUid = ref.watch(authProvider)?.uid;
+  final currentRole = ref.watch(authProvider)?.role;
+
   return FirebaseFirestore.instance
       .collection('posts')
       .where('isJobPost', isEqualTo: true)
       .snapshots()
       .map((snapshot) {
-        final docs = snapshot.docs.map((doc) {
+        final docs = snapshot.docs
+        .where((doc) => _canViewPost(doc, blockedUids, hiddenPostIds, currentUid, currentRole))
+        .map((doc) {
           final data = doc.data();
 
           return {
@@ -80,11 +123,19 @@ final jobFeedProvider = StreamProvider((ref) {
             'isJobPost': true,
             'jobTitle': data['jobTitle'] ?? 'Job Posting',
             'jobSalary': data['jobSalary'] ?? 'Negotiable',
+            'isFeatured': data['isFeatured'] ?? false,
+            'hiringStatus': data['hiringStatus'] ?? 'active',
+            'likes': data['likes'] ?? 0,
+            'comments': data['comments'] ?? 0,
             'createdAt': data['createdAt'],
           };
         }).toList();
 
+        // Featured posts sort first, then by date
         docs.sort((a, b) {
+          final aFeatured = a['isFeatured'] == true ? 1 : 0;
+          final bFeatured = b['isFeatured'] == true ? 1 : 0;
+          if (aFeatured != bFeatured) return bFeatured - aFeatured;
           final aTime = a['createdAt'] as Timestamp?;
           final bTime = b['createdAt'] as Timestamp?;
           if (aTime == null && bTime == null) return 0;
@@ -123,6 +174,9 @@ final employerJobsProvider = StreamProvider.autoDispose.family<List<Map<String, 
             'isJobPost': true,
             'jobTitle': data['jobTitle'] ?? 'Job Posting',
             'jobSalary': data['jobSalary'] ?? 'Negotiable',
+            'hiringStatus': data['hiringStatus'] ?? 'active',
+            'isFeatured': data['isFeatured'] ?? false,
+            'featuredUntil': data['featuredUntil'],
             'createdAt': data['createdAt'],
           };
         }).toList();
@@ -141,11 +195,19 @@ final employerJobsProvider = StreamProvider.autoDispose.family<List<Map<String, 
 });
 
 final unifiedFeedProvider = StreamProvider((ref) {
+  final userDocAsync = ref.watch(currentUserDocProvider);
+  final blockedUids = List<String>.from((userDocAsync.value?.data() as Map<String, dynamic>?)?['blockedUsers'] ?? []);
+  final hiddenPostIds = List<String>.from((userDocAsync.value?.data() as Map<String, dynamic>?)?['hiddenPosts'] ?? []);
+  final currentUid = ref.watch(authProvider)?.uid;
+  final currentRole = ref.watch(authProvider)?.role;
+
   return FirebaseFirestore.instance
       .collection('posts')
       .snapshots()
       .map((snapshot) {
-        final docs = snapshot.docs.map((doc) {
+        final docs = snapshot.docs
+        .where((doc) => _canViewPost(doc, blockedUids, hiddenPostIds, currentUid, currentRole))
+        .map((doc) {
           final data = doc.data();
           final bool isJob = data['isJobPost'] == true;
 
@@ -167,12 +229,22 @@ final unifiedFeedProvider = StreamProvider((ref) {
             'jobSalary': data['jobSalary'] ?? 'Negotiable',
             'likes': data['likes'] ?? 0,
             'comments': data['comments'] ?? 0,
+            'isFeatured': data['isFeatured'] ?? false,
+            'hiringStatus': data['hiringStatus'] ?? 'active',
+            'eventDate': data['eventDate'],
+            'eventTime': data['eventTime'],
+            'eventLocation': data['eventLocation'],
+            'eventTitle': data['eventTitle'],
+            'visibility': data['visibility'] ?? 'public',
             'createdAt': data['createdAt'],
           };
         }).toList();
 
-
+        // Sort: featured first, then by date
         docs.sort((a, b) {
+          final aFeatured = a['isFeatured'] == true ? 1 : 0;
+          final bFeatured = b['isFeatured'] == true ? 1 : 0;
+          if (aFeatured != bFeatured) return bFeatured - aFeatured;
           final aTime = a['createdAt'] as Timestamp?;
           final bTime = b['createdAt'] as Timestamp?;
           if (aTime == null && bTime == null) return 0;
@@ -281,6 +353,54 @@ final workerAppliedJobsProvider = StreamProvider.autoDispose<List<Map<String, dy
   );
 });
 
+// ─────────────────────────────────────────────────────────────────────────
+// 🔖 SAVED JOBS PROVIDER
+// ─────────────────────────────────────────────────────────────────────────
+
+final savedJobsProvider = StreamProvider.autoDispose<List<Map<String, dynamic>>>((ref) {
+  final auth = ref.watch(authProvider);
+  if (auth == null) return Stream.value([]);
+
+  return PostService.getSavedJobIds(auth.uid).asyncExpand((ids) async* {
+    if (ids.isEmpty) {
+      yield [];
+      return;
+    }
+    final futures = ids.map((id) =>
+        FirebaseFirestore.instance.collection('posts').doc(id).get());
+    final snaps = await Future.wait(futures);
+    final jobs = snaps
+        .where((doc) => doc.exists)
+        .map((doc) {
+          final data = doc.data()!;
+          return {
+            'id': doc.id,
+            'uid': data['uid'] ?? '',
+            'name': data['name'] ?? '',
+            'companyName': data['companyName'] ?? data['name'] ?? '',
+            'text': data['text'] ?? data['description'] ?? '',
+            'imageUrl': data['imageUrl'],
+            'location': data['location'] ?? '',
+            'role': data['role'] ?? data['userRole'] ?? '',
+            'profilePhotoUrl': data['profilePhotoUrl'] ?? data['userPhotoUrl'] ?? '',
+            'isVerified': data['isVerified'] ?? false,
+            'isAdmin': data['isAdmin'] ?? false,
+            'isJobPost': data['isJobPost'] ?? false,
+            'isAvailabilityPost': data['isAvailabilityPost'] ?? false,
+            'jobTitle': data['jobTitle'] ?? 'Job Posting',
+            'jobSalary': data['jobSalary'] ?? 'Negotiable',
+            'likes': data['likes'] ?? 0,
+            'comments': data['comments'] ?? 0,
+            'isFeatured': data['isFeatured'] ?? false,
+            'hiringStatus': data['hiringStatus'] ?? 'active',
+            'createdAt': data['createdAt'],
+          };
+        })
+        .toList();
+    yield jobs;
+  });
+});
+
 final systemAnnouncementsProvider = StreamProvider((ref) {
   final auth = ref.watch(authProvider);
   final currentUid = auth?.uid;
@@ -304,7 +424,6 @@ final systemAnnouncementsProvider = StreamProvider((ref) {
           })
           .where((msg) {
             final target = msg['targetUid'];
-            // Show if it's a global announcement OR targeted specifically to this user
             return target == null || target == 'all' || target == 'global' || target == currentUid;
           })
           .toList());

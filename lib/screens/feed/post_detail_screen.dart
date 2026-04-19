@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/services/post_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/public_user_provider.dart';
 
 class PostDetailScreen extends ConsumerWidget {
   final String postId;
@@ -118,14 +119,34 @@ class PostDetailScreen extends ConsumerWidget {
                                   shape: BoxShape.circle,
                                   border: Border.all(color: Colors.white.withOpacity(0.5), width: 2),
                                 ),
-                                child: CircleAvatar(
-                                  radius: 40,
-                                  backgroundImage: (post['profilePhotoUrl'] != null && post['profilePhotoUrl'].toString().isNotEmpty)
-                                      ? NetworkImage(post['profilePhotoUrl'])
-                                      : null,
-                                  child: (post['profilePhotoUrl'] == null || post['profilePhotoUrl'].toString().isEmpty)
-                                      ? const Icon(Icons.person, size: 40, color: Colors.white)
-                                      : null,
+                                child: Consumer(
+                                  builder: (context, ref, child) {
+                                    final String postUid = (post['uid'] ?? '').toString().trim();
+                                    final liveProfile = ref.watch(liveProfileProvider(postUid));
+                                    
+                                    return liveProfile.when(
+                                      data: (userData) {
+                                        final photoUrl = userData?['profilePhotoUrl'] ?? post['profilePhotoUrl'] ?? '';
+                                        return CircleAvatar(
+                                          radius: 40,
+                                          backgroundImage: photoUrl.isNotEmpty
+                                              ? NetworkImage(photoUrl)
+                                              : null,
+                                          child: photoUrl.isEmpty
+                                              ? const Icon(Icons.person, size: 40, color: Colors.white)
+                                              : null,
+                                        );
+                                      },
+                                      loading: () => const CircleAvatar(
+                                        radius: 40,
+                                        child: CircularProgressIndicator(strokeWidth: 2),
+                                      ),
+                                      error: (_, __) => const CircleAvatar(
+                                        radius: 40,
+                                        child: Icon(Icons.person, size: 40, color: Colors.white),
+                                      ),
+                                    );
+                                  },
                                 ),
                               ),
                             ),
@@ -148,24 +169,41 @@ class PostDetailScreen extends ConsumerWidget {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  post['name'] ?? 'Anonymous',
-                                  style: TextStyle(
-                                    color: theme.colorScheme.onSurface,
-                                    fontSize: 22,
-                                    fontWeight: FontWeight.w900,
-                                    letterSpacing: -0.5,
-                                  ),
+                                Consumer(
+                                  builder: (context, ref, child) {
+                                    final String postUid = (post['uid'] ?? '').toString().trim();
+                                    final liveProfile = ref.watch(liveProfileProvider(postUid));
+                                    final currentName = liveProfile.asData?.value?['name'] ?? 
+                                                        liveProfile.asData?.value?['fullName'] ?? 
+                                                        post['name'] ?? 'Anonymous';
+                                    return Text(
+                                      currentName,
+                                      style: TextStyle(
+                                        color: theme.colorScheme.onSurface,
+                                        fontSize: 22,
+                                        fontWeight: FontWeight.w900,
+                                        letterSpacing: -0.5,
+                                      ),
+                                    );
+                                  },
                                 ),
                                 const SizedBox(height: 4),
-                                Text(
-                                  post['role']?.toString().toUpperCase() ?? 'USER',
-                                  style: TextStyle(
-                                    color: theme.colorScheme.primary,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w800,
-                                    letterSpacing: 1.0,
-                                  ),
+                                Consumer(
+                                  builder: (context, ref, child) {
+                                    final String postUid = (post['uid'] ?? '').toString().trim();
+                                    final liveProfile = ref.watch(liveProfileProvider(postUid));
+                                    final currentRole = liveProfile.asData?.value?['role'] ?? 
+                                                        post['role']?.toString().toUpperCase() ?? 'USER';
+                                    return Text(
+                                      currentRole.toString().toUpperCase(),
+                                      style: TextStyle(
+                                        color: theme.colorScheme.primary,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w800,
+                                        letterSpacing: 1.0,
+                                      ),
+                                    );
+                                  },
                                 ),
                               ],
                             ),

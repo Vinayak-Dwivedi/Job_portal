@@ -8,14 +8,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/worker_provider.dart';
 import '../../providers/employer_provider.dart';
 
+import '../../models/subscription_plan_model.dart';
+
 class SubscriptionCheckoutScreen extends ConsumerStatefulWidget {
-  final String tier;
-  final String priceStr;
+  final SubscriptionPlan plan;
 
   const SubscriptionCheckoutScreen({
     super.key,
-    required this.tier,
-    required this.priceStr,
+    required this.plan,
   });
 
   @override
@@ -32,10 +32,14 @@ class _SubscriptionCheckoutScreenState extends ConsumerState<SubscriptionCheckou
       if (auth == null) throw Exception('User not logged in');
       
       final uid = auth.uid;
-      final days = widget.tier.toLowerCase() == 'pro' ? 30 : 90;
-      final maxApp = widget.tier.toLowerCase() == 'pro' ? 10 : 999;
       
-      await SubscriptionService.updateSubscription(uid, widget.tier, days, maxApp);
+      await SubscriptionService.updateSubscription(
+        uid, 
+        widget.plan.id, 
+        widget.plan.durationDays, 
+        widget.plan.maxApplicationsPerDay,
+        widget.plan.credits
+      );
       
       // Refresh local profile state for both roles to be safe
       await ref.read(workerProvider.notifier).loadProfile(uid);
@@ -98,8 +102,8 @@ class _SubscriptionCheckoutScreenState extends ConsumerState<SubscriptionCheckou
                    Row(
                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                      children: [
-                       Text('${widget.tier.toUpperCase()} Plan', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
-                       Text(widget.priceStr, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                       Text(widget.plan.name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF334155))),
+                       Text('₹${widget.plan.price}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
                      ],
                    ),
                    const Padding(

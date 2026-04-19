@@ -7,6 +7,8 @@ import '../../providers/auth_provider.dart';
 import '../../providers/worker_provider.dart';
 import '../../providers/employer_provider.dart';
 import '../../core/services/firestore_service.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'dart:io';
 
 class OtpVerificationScreen extends ConsumerStatefulWidget {
   final String phone;
@@ -20,6 +22,7 @@ class OtpVerificationScreen extends ConsumerStatefulWidget {
   final String longitude;
   final String bio;
   final String businessType;
+  final String? profilePhotoPath;
   final bool isLogin;
 
   const OtpVerificationScreen({
@@ -35,6 +38,7 @@ class OtpVerificationScreen extends ConsumerStatefulWidget {
     this.longitude = '0',
     this.bio = '',
     this.businessType = '',
+    this.profilePhotoPath,
     this.isLogin = false,
   });
 
@@ -101,6 +105,21 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
           return;
         }
 
+        // 3. Upload Profile Photo if provided
+        String profilePhotoUrl = '';
+        if (widget.profilePhotoPath != null) {
+          try {
+            final File file = File(widget.profilePhotoPath!);
+            final extension = widget.profilePhotoPath!.split('.').last.toLowerCase();
+            final fileName = 'profile_${DateTime.now().millisecondsSinceEpoch}.$extension';
+            final storageRef = FirebaseStorage.instance.ref().child('users').child(uid).child(fileName);
+            await storageRef.putFile(file);
+            profilePhotoUrl = await storageRef.getDownloadURL();
+          } catch (e) {
+            debugPrint("⚠️ Photo upload failed: $e");
+          }
+        }
+
         // ✅ SAVE TO FIRESTORE (SIGNUP)
         await FirestoreService.saveUser(uid, {
           'name': widget.name,
@@ -115,6 +134,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
           'bio': widget.bio,
           'businessType': widget.businessType,
           'credits': widget.role == 'employer' ? 50 : 0, // Employers get 50 credits on signup
+          'profilePhotoUrl': profilePhotoUrl,
         });
 
         // 🔐 LOGIN
